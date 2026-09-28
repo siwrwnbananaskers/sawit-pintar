@@ -194,6 +194,19 @@ const ApiService = (() => {
     return res?.success ? res.data : null;
   }
 
+  // 7. Pengaturan Sistem
+  async function getPengaturan() {
+    const res = await request('/api/pengaturan');
+    return res?.success ? res.data : null;
+  }
+
+  async function savePengaturan(data) {
+    return await request('/api/pengaturan', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
   return {
     setBaseUrl,
     getBaseUrl,
@@ -204,7 +217,8 @@ const ApiService = (() => {
     kegiatan: { get: getKegiatan, create: createKegiatan, delete: deleteKegiatan },
     panen: { get: getPanen, create: createPanen, delete: deletePanen },
     cuaca: { get: getCuaca, create: createCuaca, delete: deleteCuaca },
-    laporan: { get: getLaporan }
+    laporan: { get: getLaporan },
+    pengaturan: { get: getPengaturan, save: savePengaturan }
   };
 })();
 

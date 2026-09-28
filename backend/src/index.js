@@ -248,6 +248,76 @@ export default {
         return jsonResponse({ success: true, tahun, data: results }, 200, corsHeaders);
       }
 
+      // ======================================================================
+      // 8. PENGATURAN SISTEM
+      // ======================================================================
+      if (path === '/api/pengaturan') {
+        if (method === 'GET') {
+          let settings = await db.prepare('SELECT * FROM pengaturan WHERE id = 1').first();
+          if (!settings) {
+            settings = {
+              id: 1,
+              nama_kebun: 'Kebun Sawit Sei Karang',
+              perusahaan: 'PT Agro Sawit Lestari Mandiri',
+              alamat: 'Jl. Poros Sawit No. 88, Riau, Sumatera',
+              target_produksi: 300,
+              harga_tbs: 2500,
+              notif_cuaca: 1,
+              notif_pupuk: 1,
+              notif_iot: 1
+            };
+          }
+          return jsonResponse({ success: true, data: settings }, 200, corsHeaders);
+        }
+
+        if (method === 'POST' || method === 'PUT') {
+          const body = await request.json();
+          const { nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot } = body;
+
+          // Ensure table exists just in case migration was not run yet
+          await db.prepare(`
+            CREATE TABLE IF NOT EXISTS pengaturan (
+              id INTEGER PRIMARY KEY DEFAULT 1,
+              nama_kebun TEXT DEFAULT 'Kebun Sawit Sei Karang',
+              perusahaan TEXT DEFAULT 'PT Agro Sawit Lestari Mandiri',
+              alamat TEXT DEFAULT 'Jl. Poros Sawit No. 88, Riau, Sumatera',
+              target_produksi REAL DEFAULT 300,
+              harga_tbs REAL DEFAULT 2500,
+              notif_cuaca INTEGER DEFAULT 1,
+              notif_pupuk INTEGER DEFAULT 1,
+              notif_iot INTEGER DEFAULT 1,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+          `).run();
+
+          await db.prepare(`
+            INSERT INTO pengaturan (id, nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot, updated_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(id) DO UPDATE SET
+              nama_kebun = excluded.nama_kebun,
+              perusahaan = excluded.perusahaan,
+              alamat = excluded.alamat,
+              target_produksi = excluded.target_produksi,
+              harga_tbs = excluded.harga_tbs,
+              notif_cuaca = excluded.notif_cuaca,
+              notif_pupuk = excluded.notif_pupuk,
+              notif_iot = excluded.notif_iot,
+              updated_at = CURRENT_TIMESTAMP
+          `).bind(
+            nama_kebun || 'Kebun Sawit Sei Karang',
+            perusahaan || 'PT Agro Sawit Lestari Mandiri',
+            alamat || '',
+            target_produksi || 300,
+            harga_tbs || 2500,
+            notif_cuaca ? 1 : 0,
+            notif_pupuk ? 1 : 0,
+            notif_iot ? 1 : 0
+          ).run();
+
+          return jsonResponse({ success: true, message: 'Pengaturan sistem berhasil disimpan ke Database Cloudflare D1' }, 200, corsHeaders);
+        }
+      }
+
       // 404 Not Found
       return jsonResponse({ error: 'Endpoint not found' }, 404, corsHeaders);
 

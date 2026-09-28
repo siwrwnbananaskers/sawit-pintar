@@ -138,3 +138,22 @@ INSERT OR IGNORE INTO laporan_tahunan (tahun, bulan, blok_a, blok_b, blok_c, blo
 (2023, 'Oktober', 2850, 2400, 2550, 2150, 2450),
 (2023, 'November', 2700, 2250, 2400, 2000, 2450),
 (2023, 'Desember', 2550, 2150, 2300, 1900, 2450);
+
+-- ============================================================================
+-- 7. TABEL PENGATURAN SISTEM
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS pengaturan (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  nama_kebun TEXT DEFAULT 'Kebun Sawit Sei Karang',
+  perusahaan TEXT DEFAULT 'PT Agro Sawit Lestari Mandiri',
+  alamat TEXT DEFAULT 'Jl. Poros Sawit No. 88, Riau, Sumatera',
+  target_produksi REAL DEFAULT 300,
+  harga_tbs REAL DEFAULT 2500,
+  notif_cuaca INTEGER DEFAULT 1,
+  notif_pupuk INTEGER DEFAULT 1,
+  notif_iot INTEGER DEFAULT 1,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT OR IGNORE INTO pengaturan (id, nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot)
+VALUES (1, 'Kebun Sawit Sei Karang', 'PT Agro Sawit Lestari Mandiri', 'Jl. Poros Sawit No. 88, Riau, Sumatera', 300, 2500, 1, 1, 1);

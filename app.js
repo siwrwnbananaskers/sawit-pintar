@@ -144,6 +144,18 @@ const state = {
     pageSize: 7
   },
 
+  // Pengaturan Sistem Perkebunan (Sinkron Local & Cloud D1)
+  pengaturan: {
+    nama_kebun: 'Kebun Sawit Sei Karang',
+    perusahaan: 'PT Agro Sawit Lestari Mandiri',
+    alamat: 'Jl. Poros Sawit No. 88, Riau, Sumatera',
+    target_produksi: 300,
+    harga_tbs: 2500,
+    notif_cuaca: true,
+    notif_pupuk: true,
+    notif_iot: true
+  },
+
   // Laporan Panen 2023 Bulanan
   laporan2023: [
     { bulan: 'Januari', blokA: 2200, blokB: 1800, blokC: 1950, blokD: 1600, harga: 2450 },
@@ -199,6 +211,10 @@ async function loadSavedData() {
     if (savedPanen) state.panenList = JSON.parse(savedPanen);
     const savedCuaca = localStorage.getItem('sawit_cuaca_list');
     if (savedCuaca) state.cuacaList = JSON.parse(savedCuaca);
+    const savedPengaturan = localStorage.getItem('sawit_pengaturan');
+    if (savedPengaturan) {
+      state.pengaturan = { ...state.pengaturan, ...JSON.parse(savedPengaturan) };
+    }
   } catch (err) {
     console.warn('Local storage load note', err);
   }
@@ -230,12 +246,13 @@ async function loadSavedData() {
     if (online) {
       showToast('Terhubung ke database Cloudflare D1!', 'success');
       try {
-        const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca] = await Promise.all([
+        const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca, dbPengaturan] = await Promise.all([
           ApiService.lahan.get(),
           ApiService.pekerja.get(),
           ApiService.kegiatan.get(),
           ApiService.panen.get(),
-          ApiService.cuaca.get()
+          ApiService.cuaca.get(),
+          ApiService.pengaturan.get()
         ]);
 
         if (dbLahan && dbLahan.length > 0) state.lahanList = dbLahan;
@@ -243,6 +260,16 @@ async function loadSavedData() {
         if (dbKegiatan && dbKegiatan.length > 0) state.kegiatanList = dbKegiatan;
         if (dbPanen && dbPanen.length > 0) state.panenList = dbPanen;
         if (dbCuaca && dbCuaca.length > 0) state.cuacaList = dbCuaca;
+        if (dbPengaturan) {
+          state.pengaturan = {
+            ...state.pengaturan,
+            ...dbPengaturan,
+            notif_cuaca: !!dbPengaturan.notif_cuaca,
+            notif_pupuk: !!dbPengaturan.notif_pupuk,
+            notif_iot: !!dbPengaturan.notif_iot
+          };
+          localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+        }
       } catch (err) {
         console.warn('Cloud sync error, staying on local', err);
       }
@@ -250,6 +277,9 @@ async function loadSavedData() {
   } else {
     updateApiStatusBadge(false);
   }
+
+  // Render initial settings and weather
+  renderSettingsUI();
 
   if (state.cuacaList && state.cuacaList.length > 0) {
     updateWeatherUI(state.cuacaList[0]);
@@ -974,10 +1004,40 @@ function initModals() {
     document.getElementById('modal-pekerja-title').textContent = 'Tambah Pekerja Baru';
     document.getElementById('pekerja-avatar-preview').src = AVATAR_PRESETS.preset1;
     document.getElementById('pekerja-avatar-select').value = 'preset1';
-    document.getElementById('pekerja-avatar-custom').classList.add('hidden');
+    const fileInput = document.getElementById('pekerja-avatar-file');
+    if (fileInput) fileInput.value = '';
     handlePekerjaPosisiChange('Estate Manager');
     populateBlokDropdown();
     openModal('modal-pekerja');
+  });
+
+  // Avatar File Upload Handler (FileReader Base64)
+  const avatarFileInput = document.getElementById('pekerja-avatar-file');
+  avatarFileInput?.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        showToast('Pilih file gambar valid (JPG, PNG, atau WEBP)', 'error');
+        return;
+      }
+      if (file.size > 3 * 1024 * 1024) {
+        showToast('Ukuran foto maksimal 3MB', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const base64Data = loadEvt.target.result;
+        const preview = document.getElementById('pekerja-avatar-preview');
+        if (preview) preview.src = base64Data;
+        const select = document.getElementById('pekerja-avatar-select');
+        if (select) select.value = 'uploaded';
+        showToast('Foto berhasil dimuat! Klik Simpan untuk memperbarui profil.', 'success');
+      };
+      reader.onerror = () => {
+        showToast('Gagal membaca file gambar', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
   });
 
   // Kegiatan modal button
@@ -1017,20 +1077,8 @@ function closeModal(id) {
 // Avatar select in Pekerja Modal
 function handlePekerjaAvatarChange(value) {
   const preview = document.getElementById('pekerja-avatar-preview');
-  const customInput = document.getElementById('pekerja-avatar-custom');
-
-  if (value === 'custom') {
-    customInput.classList.remove('hidden');
-    customInput.oninput = (e) => {
-      if (e.target.value.trim()) {
-        preview.src = e.target.value.trim();
-      }
-    };
-  } else {
-    customInput.classList.add('hidden');
-    if (AVATAR_PRESETS[value]) {
-      preview.src = AVATAR_PRESETS[value];
-    }
+  if (value && AVATAR_PRESETS[value] && preview) {
+    preview.src = AVATAR_PRESETS[value];
   }
 }
 
@@ -1209,9 +1257,21 @@ function editPekerja(id) {
   document.getElementById('pekerja-email').value = worker.email || '';
   document.getElementById('pekerja-telp').value = worker.telp;
   document.getElementById('pekerja-status').value = worker.status;
-  document.getElementById('pekerja-avatar-preview').src = worker.avatar || AVATAR_PRESETS.preset1;
-  document.getElementById('pekerja-avatar-select').value = 'preset1';
-  document.getElementById('pekerja-avatar-custom').classList.add('hidden');
+  
+  const avatarSrc = worker.avatar || AVATAR_PRESETS.preset1;
+  document.getElementById('pekerja-avatar-preview').src = avatarSrc;
+  
+  const fileInput = document.getElementById('pekerja-avatar-file');
+  if (fileInput) fileInput.value = '';
+
+  const select = document.getElementById('pekerja-avatar-select');
+  const matchingKey = Object.keys(AVATAR_PRESETS).find(k => AVATAR_PRESETS[k] === avatarSrc);
+  if (matchingKey && select) {
+    select.value = matchingKey;
+  } else if (select) {
+    select.value = 'uploaded';
+  }
+
   document.getElementById('modal-pekerja-title').textContent = `Edit Karyawan: ${worker.nama}`;
 
   handlePekerjaPosisiChange(worker.posisi);
@@ -1762,6 +1822,96 @@ async function handleDetectGPS() {
 }
 
 /* ==========================================================================
+   PENGATURAN SISTEM (PERSISTENCE & DATABASE SYNC)
+   ========================================================================== */
+function renderSettingsUI() {
+  if (!state.pengaturan) return;
+  const p = state.pengaturan;
+
+  const elNama = document.getElementById('setting-nama-kebun');
+  const elPT = document.getElementById('setting-perusahaan');
+  const elAlamat = document.getElementById('setting-alamat');
+  const elTarget = document.getElementById('setting-target-produksi');
+  const elHarga = document.getElementById('setting-harga-tbs');
+  const elCuaca = document.getElementById('setting-notif-cuaca');
+  const elPupuk = document.getElementById('setting-notif-pupuk');
+  const elIot = document.getElementById('setting-notif-iot');
+
+  if (elNama && p.nama_kebun) elNama.value = p.nama_kebun;
+  if (elPT && p.perusahaan) elPT.value = p.perusahaan;
+  if (elAlamat && p.alamat !== undefined) elAlamat.value = p.alamat;
+  if (elTarget && p.target_produksi !== undefined) elTarget.value = p.target_produksi;
+  if (elHarga && p.harga_tbs !== undefined) elHarga.value = p.harga_tbs;
+  if (elCuaca) elCuaca.checked = !!p.notif_cuaca;
+  if (elPupuk) elPupuk.checked = !!p.notif_pupuk;
+  if (elIot) elIot.checked = !!p.notif_iot;
+
+  // Update estate badge tag in top header
+  const estateTag = document.querySelector('.estate-tag');
+  if (estateTag && p.nama_kebun) {
+    estateTag.innerHTML = `<i data-lucide="tree-pine"></i> ${p.nama_kebun}`;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+async function handleSaveSettings() {
+  const saveBtn = document.getElementById('btn-save-settings');
+  const origHtml = saveBtn ? saveBtn.innerHTML : '';
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Menyimpan...';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  const payload = {
+    nama_kebun: document.getElementById('setting-nama-kebun')?.value.trim() || 'Kebun Sawit Sei Karang',
+    perusahaan: document.getElementById('setting-perusahaan')?.value.trim() || 'PT Agro Sawit Lestari Mandiri',
+    alamat: document.getElementById('setting-alamat')?.value.trim() || '',
+    target_produksi: parseFloat(document.getElementById('setting-target-produksi')?.value) || 300,
+    harga_tbs: parseFloat(document.getElementById('setting-harga-tbs')?.value) || 2500,
+    notif_cuaca: document.getElementById('setting-notif-cuaca')?.checked ? 1 : 0,
+    notif_pupuk: document.getElementById('setting-notif-pupuk')?.checked ? 1 : 0,
+    notif_iot: document.getElementById('setting-notif-iot')?.checked ? 1 : 0
+  };
+
+  state.pengaturan = {
+    ...payload,
+    notif_cuaca: !!payload.notif_cuaca,
+    notif_pupuk: !!payload.notif_pupuk,
+    notif_iot: !!payload.notif_iot
+  };
+
+  localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+
+  let dbSaved = false;
+  if (window.ApiService && ApiService.isOnline()) {
+    try {
+      const res = await ApiService.pengaturan.save(payload);
+      if (res && res.success) {
+        dbSaved = true;
+      }
+    } catch (err) {
+      console.warn('Gagal sinkron database Cloudflare D1:', err);
+    }
+  }
+
+  renderSettingsUI();
+  updateKPIs();
+
+  if (saveBtn) {
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = origHtml || '<i data-lucide="save"></i> Simpan Perubahan';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  if (dbSaved) {
+    showToast('Pengaturan sistem berhasil disimpan & disinkronkan ke Database Cloudflare D1!', 'success');
+  } else {
+    showToast('Pengaturan sistem berhasil disimpan (Penyimpanan Lokal)!', 'success');
+  }
+}
+
+/* ==========================================================================
    SEARCH & FILTERS
    ========================================================================== */
 function initEventListeners() {
@@ -1908,10 +2058,8 @@ function initEventListeners() {
     renderDashboardActivities();
   });
 
-  // Save General Settings
-  document.getElementById('btn-save-settings')?.addEventListener('click', () => {
-    showToast('Pengaturan sistem berhasil disimpan!');
-  });
+  // Save General Settings (Persistent Local & Cloud D1 Database Sync)
+  document.getElementById('btn-save-settings')?.addEventListener('click', handleSaveSettings);
 
   // Save Cloudflare Worker API URL and Test Connection
   document.getElementById('btn-save-api-url')?.addEventListener('click', async () => {

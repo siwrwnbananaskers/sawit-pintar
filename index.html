@@ -970,29 +970,29 @@
           <div class="settings-grid">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">Profil Perkebunan</h3>
+                <h3 class="card-title"><i data-lucide="building-2" style="color:var(--primary-green); vertical-align:middle;"></i> Profil Perkebunan</h3>
               </div>
               <div class="card-body">
-                <form class="form-grid">
+                <form class="form-grid" id="form-settings-kebun" onsubmit="event.preventDefault()">
                   <div class="form-group">
                     <label>Nama Perkebunan</label>
-                    <input type="text" class="form-control" value="Kebun Sawit Sei Karang">
+                    <input type="text" id="setting-nama-kebun" class="form-control" value="Kebun Sawit Sei Karang">
                   </div>
                   <div class="form-group">
                     <label>Perusahaan / PT</label>
-                    <input type="text" class="form-control" value="PT Agro Sawit Lestari Mandiri">
+                    <input type="text" id="setting-perusahaan" class="form-control" value="PT Agro Sawit Lestari Mandiri">
                   </div>
                   <div class="form-group full-width">
                     <label>Lokasi / Alamat Perkebunan</label>
-                    <input type="text" class="form-control" value="Jl. Poros Sawit No. 88, Riau, Sumatera">
+                    <input type="text" id="setting-alamat" class="form-control" value="Jl. Poros Sawit No. 88, Riau, Sumatera">
                   </div>
                   <div class="form-group">
                     <label>Target Produksi Tahunan (Ton)</label>
-                    <input type="number" class="form-control" value="300">
+                    <input type="number" id="setting-target-produksi" class="form-control" value="300" step="1">
                   </div>
                   <div class="form-group">
                     <label>Standar Harga Acuan TBS (Rp/kg)</label>
-                    <input type="number" class="form-control" value="2500">
+                    <input type="number" id="setting-harga-tbs" class="form-control" value="2500" step="50">
                   </div>
                 </form>
               </div>
@@ -1000,7 +1000,7 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-title">Notifikasi & Sensor</h3>
+                <h3 class="card-title"><i data-lucide="bell-ring" style="color:var(--primary-green); vertical-align:middle;"></i> Notifikasi & Sensor</h3>
               </div>
               <div class="card-body">
                 <div class="toggle-list">
@@ -1010,7 +1010,7 @@
                       <p class="text-muted">Kirim notifikasi otomatis jika curah hujan > 40 mm</p>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" checked>
+                      <input type="checkbox" id="setting-notif-cuaca" checked>
                       <span class="slider"></span>
                     </label>
                   </div>
@@ -1020,7 +1020,7 @@
                       <p class="text-muted">Notifikasi H-1 sebelum jadwal pemupukan blok</p>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" checked>
+                      <input type="checkbox" id="setting-notif-pupuk" checked>
                       <span class="slider"></span>
                     </label>
                   </div>
@@ -1030,7 +1030,7 @@
                       <p class="text-muted">Tarik telemetry cuaca tiap 15 menit</p>
                     </div>
                     <label class="switch">
-                      <input type="checkbox" checked>
+                      <input type="checkbox" id="setting-notif-iot" checked>
                       <span class="slider"></span>
                     </label>
                   </div>
@@ -1368,21 +1368,30 @@
       <form id="form-pekerja" onsubmit="handleSavePekerja(event)">
         <input type="hidden" id="pekerja-id">
         <div class="modal-body">
-          <!-- Foto Profil & Avatar Selection -->
+          <!-- Foto Profil & Avatar Selection (Upload Device File) -->
           <div class="profile-avatar-edit-box">
-            <div class="avatar-preview-wrapper">
+            <div class="avatar-preview-wrapper" onclick="document.getElementById('pekerja-avatar-file').click()" title="Klik untuk upload foto dari device">
               <img id="pekerja-avatar-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar Pekerja" onerror="this.src='https://ui-avatars.com/api/?name=Pekerja&background=2E7D32&color=fff'">
+              <div class="avatar-upload-overlay">
+                <i data-lucide="camera"></i>
+              </div>
             </div>
             <div class="avatar-change-control">
               <label>Foto Profil / Avatar</label>
-              <select id="pekerja-avatar-select" class="form-control" onchange="handlePekerjaAvatarChange(this.value)">
-                <option value="preset1">Avatar 1 (Foto Default)</option>
-                <option value="preset2">Avatar 2 (Pria Formal)</option>
-                <option value="preset3">Avatar 3 (Pria Lapangan)</option>
-                <option value="preset4">Avatar 4 (Inisial Hijau)</option>
-                <option value="custom">URL Foto Kustom...</option>
-              </select>
-              <input type="url" id="pekerja-avatar-custom" class="form-control hidden" placeholder="Masukkan URL foto (https://...)" style="margin-top:6px;">
+              <div class="avatar-upload-actions">
+                <input type="file" id="pekerja-avatar-file" accept="image/png, image/jpeg, image/jpg, image/webp" class="hidden">
+                <button type="button" class="btn-upload-avatar" onclick="document.getElementById('pekerja-avatar-file').click()">
+                  <i data-lucide="upload"></i> Upload Foto
+                </button>
+                <select id="pekerja-avatar-select" class="form-control" style="flex:1;" onchange="handlePekerjaAvatarChange(this.value)">
+                  <option value="preset1">Preset 1 (Default)</option>
+                  <option value="preset2">Preset 2 (Formal)</option>
+                  <option value="preset3">Preset 3 (Lapangan)</option>
+                  <option value="preset4">Preset 4 (Inisial)</option>
+                  <option value="uploaded" disabled hidden>Foto Terupload</option>
+                </select>
+              </div>
+              <small class="text-muted" style="font-size:11px; display:block; margin-top:3px;">Format JPG, PNG, WEBP (maks. 3MB). Upload langsung dari komputer.</small>
             </div>
           </div>
 
@@ -1438,9 +1447,9 @@
           </div>
 
           <div class="form-group" id="pekerja-estate-notice">
-            <small class="text-muted" style="font-size:11.5px; background:#f4faf6; padding:8px 12px; border-radius:6px; display:block; border-left:3px solid var(--accent-emerald);">
-              <i data-lucide="check-circle-2" style="width:14px; height:14px; vertical-align:middle; color:var(--accent-emerald);"></i>
-              <strong>Sinkronisasi Profil Otomatis:</strong> Mengubah nama, foto profil, jabatan, dan kontak pada <strong>Estate Manager</strong> akan langsung otomatis menyinkronkan profil header atas dan sidebar sistem secara real-time.
+            <small class="text-muted" style="font-size:11px; background:#f4faf6; padding:6px 10px; border-radius:6px; display:block; border-left:3px solid var(--accent-emerald);">
+              <i data-lucide="check-circle-2" style="width:13px; height:13px; vertical-align:middle; color:var(--accent-emerald);"></i>
+              <strong>Sinkronisasi Otomatis:</strong> Mengubah nama, foto profil, dan kontak Estate Manager akan langsung otomatis menyinkronkan profil header & sidebar sistem.
             </small>
           </div>
         </div>
