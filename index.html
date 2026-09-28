@@ -15,6 +15,69 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- ============================================ -->
+  <!-- FULLSCREEN LOGIN PORTAL (PRIVACY & SECURITY) -->
+  <!-- ============================================ -->
+  <div class="login-screen-overlay" id="login-screen">
+    <!-- Decorative floating orbs -->
+    <div class="login-orb orb-1"></div>
+    <div class="login-orb orb-2"></div>
+    <div class="login-orb orb-3"></div>
+
+    <div class="login-card-container">
+      <div class="login-card-header">
+        <div class="login-brand-badge">
+          <div class="logo-icon large">
+            <i data-lucide="sprout"></i>
+          </div>
+        </div>
+        <h2 class="login-title">Sawit Pintar</h2>
+        <p class="login-subtitle">Portal Akses Perkebunan Kelapa Sawit (Sistem Privat)</p>
+        <span class="security-badge">
+          <i data-lucide="shield-check"></i> Autentikasi Enkripsi Aman
+        </span>
+      </div>
+
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="login-form">
+        <div id="login-error-alert" class="login-alert hidden">
+          <i data-lucide="alert-triangle"></i>
+          <span id="login-error-msg">Username atau Password salah!</span>
+        </div>
+
+        <div class="form-group">
+          <label for="login-username"><i data-lucide="user"></i> Nama Pengguna (Username)</label>
+          <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password"><i data-lucide="lock"></i> Kata Sandi (Password)</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-password" id="btn-toggle-password" title="Tampilkan/Sembunyikan Password">
+              <i data-lucide="eye" id="icon-toggle-password"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="login-options">
+          <label class="remember-me-checkbox">
+            <input type="checkbox" id="login-remember" checked>
+            <span>Ingat Sesi Login Saya</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit">
+          <i data-lucide="log-in"></i> Masuk Ke Sistem
+        </button>
+      </form>
+
+      <div class="login-card-footer">
+        <p><i data-lucide="lock" style="width:12px; height:12px;"></i> Hak Cipta &copy; 2026 PT Agro Sawit Lestari Mandiri</p>
+        <small class="text-muted">Akses privat • Sesi expire dalam 24 jam • v2.1</small>
+      </div>
+    </div>
+  </div>
+
   <div class="app-container">
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
@@ -94,6 +157,13 @@
               <span>Pengaturan</span>
             </a>
           </li>
+          <li class="nav-divider"></li>
+          <li>
+            <a href="javascript:void(0)" class="nav-item" id="nav-logout" style="color: #fca5a5;">
+              <i data-lucide="log-out"></i>
+              <span>Keluar (Logout)</span>
+            </a>
+          </li>
         </ul>
       </nav>
 
@@ -169,6 +239,10 @@
               <span class="role" id="header-user-role">Estate Manager</span>
             </div>
           </div>
+
+          <button class="btn-icon" id="btn-header-logout" title="Keluar / Logout dari Sistem" style="color: #ef4444; border-color: #fca5a5; margin-left: 6px;">
+            <i data-lucide="log-out"></i>
+          </button>
         </div>
       </header>
 

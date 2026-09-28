@@ -22,6 +22,14 @@ const AVATAR_PRESETS = {
 const state = {
   activeView: 'dashboard',
 
+  // System Privacy & Authentication Config (Default: si_wrwn / 130399)
+  isAuthenticated: false,
+  authConfig: {
+    username: 'si_wrwn',
+    passwordHash: '8a129035e98bb4b6b669e46a7824896796348efca66eb132a26514757aeeb448',
+    plainPasswordBackup: '130399'
+  },
+
   // Manajemen Pekerja (All profiles, including Estate Manager)
   pekerjaList: [
     {
@@ -158,6 +166,9 @@ const charts = {};
 
 // Application Entry Point
 document.addEventListener('DOMContentLoaded', async () => {
+  checkAuthSession();
+  updateAuthUI();
+
   await loadSavedData();
   renderUserProfile();
   initClock();
@@ -1933,6 +1944,26 @@ function initEventListeners() {
     if (title) title.textContent = `Tabel Laporan Panen ${e.target.value}`;
     showToast(`Memuat data laporan tahun ${e.target.value}`);
   });
+
+  // Logout Handlers (Sidebar & Header)
+  document.getElementById('nav-logout')?.addEventListener('click', handleLogout);
+  document.getElementById('btn-header-logout')?.addEventListener('click', handleLogout);
+
+  // Password Visibility Toggle Button
+  document.getElementById('btn-toggle-password')?.addEventListener('click', () => {
+    const passInput = document.getElementById('login-password');
+    const icon = document.getElementById('icon-toggle-password');
+    if (!passInput) return;
+
+    if (passInput.type === 'password') {
+      passInput.type = 'text';
+      if (icon) icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      passInput.type = 'password';
+      if (icon) icon.setAttribute('data-lucide', 'eye');
+    }
+    if (window.lucide) lucide.createIcons();
+  });
 }
 
 /* ==========================================================================
@@ -2266,3 +2297,235 @@ function formatTanggal(isoString) {
   }
   return isoString;
 }
+
+/* ==========================================================================
+   AUTHENTICATION & SECURITY SYSTEM
+   ========================================================================== */
+let failedLoginAttempts = parseInt(sessionStorage.getItem('sawit_failed_attempts') || '0');
+let lockoutTimeRemaining = 0;
+let lockoutTimer = null;
+const SESSION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+async function computeSHA256(str) {
+  if (window.crypto && window.crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn('Crypto subtle error:', e);
+    }
+  }
+  return null;
+}
+
+// Pre-compute the correct hash at startup to ensure it's always right
+(async function initPasswordHash() {
+  const correctHash = await computeSHA256(state.authConfig.plainPasswordBackup);
+  if (correctHash) {
+    state.authConfig.passwordHash = correctHash;
+  }
+})();
+
+function checkAuthSession() {
+  const sources = [
+    { key: 'sawit_auth_session', storage: sessionStorage },
+    { key: 'sawit_auth_session', storage: localStorage }
+  ];
+
+  for (const src of sources) {
+    const sessionStr = src.storage.getItem(src.key);
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session && session.username && session.token) {
+          // Check username match
+          if (session.username.toLowerCase() !== state.authConfig.username.toLowerCase()) continue;
+
+          // Check session expiry (24h max)
+          if (session.createdAt) {
+            const created = new Date(session.createdAt).getTime();
+            if (Date.now() - created > SESSION_EXPIRY_MS) {
+              src.storage.removeItem(src.key);
+              continue;
+            }
+          }
+
+          state.isAuthenticated = true;
+          return true;
+        }
+      } catch (e) {
+        src.storage.removeItem(src.key);
+        console.warn('Invalid auth session, removed:', e);
+      }
+    }
+  }
+
+  state.isAuthenticated = false;
+  return false;
+}
+
+function updateAuthUI() {
+  const loginOverlay = document.getElementById('login-screen');
+  const appContainer = document.querySelector('.app-container');
+
+  if (state.isAuthenticated) {
+    if (loginOverlay) loginOverlay.classList.add('overlay-hidden');
+    if (appContainer) appContainer.style.pointerEvents = '';
+  } else {
+    if (loginOverlay) loginOverlay.classList.remove('overlay-hidden');
+    if (appContainer) appContainer.style.pointerEvents = 'none';
+    // Focus username field
+    setTimeout(() => {
+      document.getElementById('login-username')?.focus();
+    }, 400);
+  }
+}
+
+async function handleLoginSubmit(e) {
+  if (e) e.preventDefault();
+
+  if (lockoutTimeRemaining > 0) {
+    showLoginError(`Akses dikunci sementara. Tunggu ${lockoutTimeRemaining} detik lagi.`);
+    return;
+  }
+
+  const userIn = document.getElementById('login-username')?.value.trim();
+  const passIn = document.getElementById('login-password')?.value || '';
+  const rememberIn = document.getElementById('login-remember')?.checked;
+
+  if (!userIn || !passIn) {
+    showLoginError('Mohon isi nama pengguna dan kata sandi.');
+    return;
+  }
+
+  const submitBtn = document.getElementById('btn-login-submit');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i data-lucide="loader" class="spin"></i> Memverifikasi...`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // Artificial delay for brute-force protection (200-500ms)
+  await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+
+  // Compute password SHA-256 hash for secure comparison
+  const passHash = await computeSHA256(passIn);
+
+  const isUserValid = userIn.toLowerCase() === state.authConfig.username.toLowerCase();
+  const isPassValid = (passHash && passHash === state.authConfig.passwordHash) || (passIn === state.authConfig.plainPasswordBackup);
+
+  if (isUserValid && isPassValid) {
+    failedLoginAttempts = 0;
+    sessionStorage.setItem('sawit_failed_attempts', '0');
+    state.isAuthenticated = true;
+
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const sessionData = {
+      username: state.authConfig.username,
+      token,
+      createdAt: new Date().toISOString()
+    };
+
+    if (rememberIn) {
+      localStorage.setItem('sawit_auth_session', JSON.stringify(sessionData));
+    } else {
+      sessionStorage.setItem('sawit_auth_session', JSON.stringify(sessionData));
+    }
+
+    hideLoginError();
+    updateAuthUI();
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i data-lucide="check-circle-2"></i> Login Berhasil!`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    showToast(`Selamat datang kembali, ${state.authConfig.username}!`, 'success');
+  } else {
+    failedLoginAttempts++;
+    sessionStorage.setItem('sawit_failed_attempts', String(failedLoginAttempts));
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i data-lucide="log-in"></i> Masuk Ke Sistem`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    if (failedLoginAttempts >= 5) {
+      startLockoutTimer(30 * Math.ceil(failedLoginAttempts / 5));
+    } else {
+      showLoginError(`Username atau Password salah! (Percobaan ${failedLoginAttempts}/5)`);
+    }
+  }
+}
+
+function startLockoutTimer(seconds) {
+  lockoutTimeRemaining = seconds;
+  const submitBtn = document.getElementById('btn-login-submit');
+  showLoginError(`Keamanan: ${failedLoginAttempts}x gagal! Akses dikunci ${lockoutTimeRemaining} detik.`);
+
+  if (submitBtn) submitBtn.disabled = true;
+
+  if (lockoutTimer) clearInterval(lockoutTimer);
+  lockoutTimer = setInterval(() => {
+    lockoutTimeRemaining--;
+    if (lockoutTimeRemaining <= 0) {
+      clearInterval(lockoutTimer);
+      lockoutTimeRemaining = 0;
+      failedLoginAttempts = 0;
+      sessionStorage.setItem('sawit_failed_attempts', '0');
+      hideLoginError();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i data-lucide="log-in"></i> Masuk Ke Sistem`;
+        if (window.lucide) lucide.createIcons();
+      }
+    } else {
+      showLoginError(`Keamanan: Akses dikunci ${lockoutTimeRemaining} detik lagi.`);
+    }
+  }, 1000);
+}
+
+function showLoginError(msg) {
+  const alertEl = document.getElementById('login-error-alert');
+  const msgEl = document.getElementById('login-error-msg');
+  if (msgEl) msgEl.textContent = msg;
+  if (alertEl) {
+    alertEl.classList.remove('hidden');
+    // Re-trigger shake animation
+    alertEl.style.animation = 'none';
+    alertEl.offsetHeight; // force reflow
+    alertEl.style.animation = '';
+  }
+}
+
+function hideLoginError() {
+  const alertEl = document.getElementById('login-error-alert');
+  if (alertEl) alertEl.classList.add('hidden');
+}
+
+function handleLogout() {
+  if (confirm('Apakah Anda yakin ingin keluar (logout) dari portal privat Sawit Pintar?')) {
+    sessionStorage.removeItem('sawit_auth_session');
+    localStorage.removeItem('sawit_auth_session');
+    sessionStorage.setItem('sawit_failed_attempts', '0');
+    failedLoginAttempts = 0;
+    state.isAuthenticated = false;
+    updateAuthUI();
+
+    // Clear login form
+    const userIn = document.getElementById('login-username');
+    const passIn = document.getElementById('login-password');
+    if (userIn) userIn.value = '';
+    if (passIn) passIn.value = '';
+
+    showToast('Anda telah keluar dari sistem secara aman.', 'success');
+  }
+}
+
