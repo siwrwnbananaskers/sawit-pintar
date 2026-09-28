@@ -53,12 +53,16 @@
   padding: 0;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   color: var(--text-main);
   line-height: 1.5;
-  overflow-x: hidden;
   font-size: 14px;
 }
 
@@ -81,15 +85,20 @@ body {
 /* APP LAYOUT */
 .app-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   width: 100%;
+  overflow: hidden;
 }
 
 /* ==========================================================================
-   SIDEBAR
+   SIDEBAR (FROZEN / FIXED POSITION WITH INDEPENDENT SCROLL)
    ========================================================================== */
 .sidebar {
   width: 250px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  left: 0;
   background-color: var(--bg-sidebar);
   color: var(--sidebar-text);
   display: flex;
@@ -98,10 +107,12 @@ body {
   transition: var(--transition);
   z-index: 100;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
 }
 
 .sidebar-header {
   padding: 24px 20px 18px 20px;
+  flex-shrink: 0;
 }
 
 .brand-logo {
@@ -151,6 +162,7 @@ body {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
+  flex-shrink: 0;
 }
 
 .avatar-wrapper {
@@ -200,11 +212,31 @@ body {
   color: #8bbfa0;
 }
 
-/* Navigation */
+/* Navigation with custom slim scrollbar */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
-  padding: 0 12px;
+  overflow-x: hidden;
+  padding: 0 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .sidebar-nav ul {
@@ -265,7 +297,9 @@ body {
 
 .sidebar-footer {
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
 }
 
 .system-status {
@@ -283,15 +317,36 @@ body {
 }
 
 /* ==========================================================================
-   MAIN CONTENT
+   MAIN CONTENT (INDEPENDENT RIGHT-SIDE SCROLL)
    ========================================================================== */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  overflow-y: auto;
   height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f3;
+}
+
+.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+  background: #f1f5f3;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Top Header */
