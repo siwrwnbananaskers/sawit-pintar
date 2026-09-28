@@ -324,25 +324,25 @@
                   <div class="weather-main-info">
                     <div class="weather-temp-badge">
                       <i data-lucide="sun" class="sun-icon"></i>
-                      <span class="temp-val">31°C</span>
+                      <span class="temp-val" id="dash-weather-temp">31°C</span>
                     </div>
                     <div>
-                      <h4 class="weather-status-text">Cerah Berawan</h4>
-                      <p class="weather-location-text">Stasiun Meteorologi Blok A</p>
+                      <h4 class="weather-status-text" id="dash-weather-status">Cerah Berawan</h4>
+                      <p class="weather-location-text" id="dash-weather-time">Stasiun Meteorologi Blok A</p>
                     </div>
                   </div>
                   <div class="weather-mini-stats">
                     <div class="mini-stat-item">
                       <span class="label">Kelembaban</span>
-                      <span class="val">81%</span>
+                      <span class="val" id="dash-weather-humidity">81%</span>
                     </div>
                     <div class="mini-stat-item">
                       <span class="label">Curah Hujan</span>
-                      <span class="val">45 mm</span>
+                      <span class="val" id="dash-weather-rain">45 mm</span>
                     </div>
                     <div class="mini-stat-item">
                       <span class="label">Kecepatan Angin</span>
-                      <span class="val">5 km/h</span>
+                      <span class="val" id="dash-weather-wind">5 km/h</span>
                     </div>
                   </div>
                 </div>
@@ -605,8 +605,8 @@
               </div>
               <div class="weather-card-content">
                 <span class="weather-metric-label">Suhu Udara</span>
-                <div class="weather-metric-value">31°C</div>
-                <span class="weather-metric-sub">Optimal (26°C - 33°C)</span>
+                <div class="weather-metric-value" id="weather-card-suhu">31°C</div>
+                <span class="weather-metric-sub" id="weather-card-suhu-sub">Optimal (26°C - 33°C)</span>
               </div>
             </div>
 
@@ -616,8 +616,8 @@
               </div>
               <div class="weather-card-content">
                 <span class="weather-metric-label">Kelembaban</span>
-                <div class="weather-metric-value">81%</div>
-                <span class="weather-metric-sub">Kelembaban Tinggi</span>
+                <div class="weather-metric-value" id="weather-card-kelembaban">81%</div>
+                <span class="weather-metric-sub" id="weather-card-kelembaban-sub">Kelembaban Tinggi</span>
               </div>
             </div>
 
@@ -627,8 +627,8 @@
               </div>
               <div class="weather-card-content">
                 <span class="weather-metric-label">Curah Hujan</span>
-                <div class="weather-metric-value">45 mm</div>
-                <span class="weather-metric-sub">Hujan Sedang Teratur</span>
+                <div class="weather-metric-value" id="weather-card-curah">45 mm</div>
+                <span class="weather-metric-sub" id="weather-card-curah-sub">Hujan Sedang Teratur</span>
               </div>
             </div>
 
@@ -638,8 +638,8 @@
               </div>
               <div class="weather-card-content">
                 <span class="weather-metric-label">Kecepatan Angin</span>
-                <div class="weather-metric-value">5 km/h</div>
-                <span class="weather-metric-sub">Tenang & Normal</span>
+                <div class="weather-metric-value" id="weather-card-angin">5 km/h</div>
+                <span class="weather-metric-sub" id="weather-card-angin-sub">Tenang & Normal</span>
               </div>
             </div>
           </div>
