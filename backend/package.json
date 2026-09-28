@@ -1,0 +1,16 @@
+{
+  "name": "sawit-pintar-backend",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers & D1 REST API for Sawit Pintar",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute sawit-pintar-db --file=./schema.sql",
+    "db:init:local": "wrangler d1 execute sawit-pintar-db --local --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  },
+  "dependencies": {}
+}

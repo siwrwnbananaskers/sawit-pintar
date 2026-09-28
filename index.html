@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sawit Pintar - Sistem Manajemen Perkebunan Kelapa Sawit</title>
+  <meta name="description" content="Dashboard Sistem Manajemen Perkebunan Kelapa Sawit Terintegrasi - Sawit Pintar. Monitoring Lahan, Cuaca, Perkembangan Tanaman, Hasil Panen, dan Laporan.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js for interactive analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon">
+            <i data-lucide="sprout"></i>
+          </div>
+          <div class="brand-text">
+            <h2>Sawit Pintar</h2>
+            <span>Smart Plantation System</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile Card in Sidebar (Navigates to Manajemen Pekerja) -->
+      <div class="user-profile-badge clickable-profile" id="sidebar-user-profile" title="Klik untuk kelola di Manajemen Pekerja">
+        <div class="avatar-wrapper">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="sidebar-avatar-img" id="sidebar-user-avatar-img" onerror="this.src='https://ui-avatars.com/api/?name=Wirawan&background=2E7D32&color=fff'">
+          <span class="status-indicator online"></span>
+        </div>
+        <div class="user-info">
+          <span class="user-name" id="sidebar-user-name">Wirawan, S.Kom</span>
+          <span class="user-role" id="sidebar-user-role">Estate Manager</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="#dashboard" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="#data-lahan" class="nav-item" data-view="data-lahan" id="nav-data-lahan">
+              <i data-lucide="map"></i>
+              <span>Data Lahan</span>
+            </a>
+          </li>
+          <li>
+            <a href="#perkembangan" class="nav-item" data-view="perkembangan" id="nav-perkembangan">
+              <i data-lucide="leaf"></i>
+              <span>Perkembangan Tanaman</span>
+            </a>
+          </li>
+          <li>
+            <a href="#hasil-panen" class="nav-item" data-view="hasil-panen" id="nav-hasil-panen">
+              <i data-lucide="archive"></i>
+              <span>Hasil Panen</span>
+            </a>
+          </li>
+          <li>
+            <a href="#monitoring-cuaca" class="nav-item" data-view="monitoring-cuaca" id="nav-monitoring-cuaca">
+              <i data-lucide="cloud-sun"></i>
+              <span>Monitoring Cuaca</span>
+            </a>
+          </li>
+          <li>
+            <a href="#laporan" class="nav-item" data-view="laporan" id="nav-laporan">
+              <i data-lucide="bar-chart-3"></i>
+              <span>Laporan</span>
+            </a>
+          </li>
+          <li class="nav-divider"></li>
+          <li>
+            <a href="#manajemen-pekerja" class="nav-item" data-view="manajemen-pekerja" id="nav-manajemen-pekerja">
+              <i data-lucide="users"></i>
+              <span>Manajemen Pekerja</span>
+            </a>
+          </li>
+          <li>
+            <a href="#pengaturan" class="nav-item" data-view="pengaturan" id="nav-pengaturan">
+              <i data-lucide="settings"></i>
+              <span>Pengaturan</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <i data-lucide="wifi"></i>
+          <span>Sistem Online • Sync Aktif</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      <!-- TOP HEADER BAR -->
+      <header class="top-header">
+        <div class="header-left">
+          <button id="sidebar-toggle" class="btn-icon" aria-label="Toggle Sidebar">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="breadcrumbs">
+            <span class="estate-tag"><i data-lucide="tree-pine"></i> Kebun Sawit Sei Karang</span>
+            <span class="breadcrumb-separator">/</span>
+            <span id="breadcrumb-current-page" class="current">Dashboard Sawit Pintar</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="realtime-clock" id="realtime-clock">
+            <i data-lucide="clock"></i>
+            <span id="clock-display">Loading...</span>
+          </div>
+
+          <div class="notification-wrapper">
+            <button class="btn-icon btn-has-badge" id="btn-notifications" aria-label="Notifikasi">
+              <i data-lucide="bell"></i>
+              <span class="badge-count">3</span>
+            </button>
+            <div class="notification-dropdown hidden" id="notification-dropdown">
+              <div class="dropdown-header">
+                <h6>Notifikasi Perkebunan</h6>
+                <button class="text-btn">Tandai Dibaca</button>
+              </div>
+              <ul class="notification-list">
+                <li class="unread">
+                  <div class="notif-icon green"><i data-lucide="check-circle-2"></i></div>
+                  <div class="notif-text">
+                    <p><strong>Panen Blok B selesai</strong> (2.400 kg)</p>
+                    <span>15 menit yang lalu</span>
+                  </div>
+                </li>
+                <li class="unread">
+                  <div class="notif-icon yellow"><i data-lucide="cloud-rain"></i></div>
+                  <div class="notif-text">
+                    <p><strong>Peringatan Hujan</strong>: Curah hujan 45 mm</p>
+                    <span>1 jam yang lalu</span>
+                  </div>
+                </li>
+                <li>
+                  <div class="notif-icon blue"><i data-lucide="calendar"></i></div>
+                  <div class="notif-text">
+                    <p>Jadwal Pemupukan NPK Blok C besok pagi</p>
+                    <span>3 jam yang lalu</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="header-user-profile clickable-profile" id="header-user-profile" title="Klik untuk kelola profil di Manajemen Pekerja">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar" class="header-avatar" id="header-user-avatar" onerror="this.src='https://ui-avatars.com/api/?name=Wirawan&background=2E7D32&color=fff'">
+            <div class="user-meta">
+              <span class="name" id="header-user-name">Wirawan, S.Kom</span>
+              <span class="role" id="header-user-role">Estate Manager</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW CONTAINER (TAB SWITCHING) -->
+      <div class="content-body">
+
+        <!-- ============================================ -->
+        <!-- VIEW 1: DASHBOARD -->
+        <!-- ============================================ -->
+        <section id="view-dashboard" class="page-view active">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Dashboard Sawit Pintar</h1>
+              <p class="page-subtitle">Ringkasan data operasional & performa perkebunan sawit terintegrasi</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" id="btn-refresh-dashboard">
+                <i data-lucide="refresh-cw"></i> Segarkan Data
+              </button>
+              <button class="btn btn-primary" onclick="switchView('hasil-panen')">
+                <i data-lucide="plus"></i> Input Panen
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Luas Lahan</span>
+                <div class="kpi-icon-badge green">
+                  <i data-lucide="map-pin"></i>
+                </div>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-value" id="kpi-luas-lahan">168 <span class="unit">Ha</span></div>
+                <div class="kpi-trend positive">
+                  <i data-lucide="trending-up"></i>
+                  <span>4 Blok Produktif</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Jumlah Pohon</span>
+                <div class="kpi-icon-badge emerald">
+                  <i data-lucide="trees"></i>
+                </div>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-value" id="kpi-jumlah-pohon">8.400</div>
+                <div class="kpi-trend positive">
+                  <i data-lucide="check-check"></i>
+                  <span>50 Pohon / Ha (Ideal)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Hasil Panen Terakhir</span>
+                <div class="kpi-icon-badge amber">
+                  <i data-lucide="truck"></i>
+                </div>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-value" id="kpi-panen-terakhir">22.8 <span class="unit">Ton</span></div>
+                <div class="kpi-trend positive">
+                  <i data-lucide="arrow-up-right"></i>
+                  <span>+12.4% vs bulan lalu</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">Estimasi Panen</span>
+                <div class="kpi-icon-badge blue">
+                  <i data-lucide="sparkles"></i>
+                </div>
+              </div>
+              <div class="kpi-body">
+                <div class="kpi-value" id="kpi-estimasi-panen">25.3 <span class="unit">Ton</span></div>
+                <div class="kpi-trend positive">
+                  <i data-lucide="calendar"></i>
+                  <span>Panen Raya Oktober</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-grid dashboard-charts">
+            <!-- Area Chart: Produksi Bulanan (ha) -->
+            <div class="card chart-card large-chart">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Produksi Bulanan (ha)</h3>
+                  <p class="card-subtitle">Tren luas areal dan hasil panen bulanan tahun berjalan</p>
+                </div>
+                <div class="chart-controls">
+                  <span class="badge badge-soft-green">Tahun 2023 - 2024</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                  <canvas id="chartProduksiBulanan"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bar Chart: Produksi per Blok (ton) -->
+            <div class="card chart-card side-chart">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Produksi per Blok (ton)</h3>
+                  <p class="card-subtitle">Distribusi volume panen per blok kebun</p>
+                </div>
+                <div class="chart-controls">
+                  <span class="badge badge-soft-amber">Aktif 4 Blok</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                  <canvas id="chartProduksiBlok"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Quick Status & Recent Operations -->
+          <div class="dashboard-bottom-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Aktivitas Perkebunan Terkini</h3>
+                <button class="text-btn" onclick="switchView('perkembangan')">Lihat Semua</button>
+              </div>
+              <div class="card-body p-0">
+                <div class="recent-activity-list" id="dashboard-recent-activity">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Kondisi Cuaca Saat Ini</h3>
+                <button class="text-btn" onclick="switchView('monitoring-cuaca')">Detail Sensor</button>
+              </div>
+              <div class="card-body">
+                <div class="weather-mini-widget">
+                  <div class="weather-main-info">
+                    <div class="weather-temp-badge">
+                      <i data-lucide="sun" class="sun-icon"></i>
+                      <span class="temp-val">31°C</span>
+                    </div>
+                    <div>
+                      <h4 class="weather-status-text">Cerah Berawan</h4>
+                      <p class="weather-location-text">Stasiun Meteorologi Blok A</p>
+                    </div>
+                  </div>
+                  <div class="weather-mini-stats">
+                    <div class="mini-stat-item">
+                      <span class="label">Kelembaban</span>
+                      <span class="val">81%</span>
+                    </div>
+                    <div class="mini-stat-item">
+                      <span class="label">Curah Hujan</span>
+                      <span class="val">45 mm</span>
+                    </div>
+                    <div class="mini-stat-item">
+                      <span class="label">Kecepatan Angin</span>
+                      <span class="val">5 km/h</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 2: DATA LAHAN -->
+        <!-- ============================================ -->
+        <section id="view-data-lahan" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Data Lahan</h1>
+              <p class="page-subtitle">Daftar Lahan dan inventarisasi blok perkebunan sawit</p>
+            </div>
+            <div class="header-actions">
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-lahan" placeholder="Cari nama blok / lokasi...">
+              </div>
+              <button class="btn btn-primary" id="btn-tambah-lahan">
+                <i data-lucide="plus"></i> Tambah Lahan
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Table Card -->
+          <div class="card table-card">
+            <div class="card-header">
+              <h3 class="card-title">Daftar Lahan</h3>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" onclick="exportTableToCSV('lahan-table', 'Data_Lahan_Sawit.csv')">
+                  <i data-lucide="download"></i> Export CSV
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="lahan-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama Lahan</th>
+                    <th>Lokasi</th>
+                    <th>Luas Lahan</th>
+                    <th>Jumlah Pohon</th>
+                    <th>Varietas</th>
+                    <th>Mandor Penanggung Jawab</th>
+                    <th>Status</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="lahan-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4 Bottom Statistics Cards (Exactly like the PDF) -->
+          <div class="summary-stat-grid mt-4">
+            <div class="stat-box">
+              <span class="stat-label">Total Lahan</span>
+              <span class="stat-number" id="stat-total-lahan">4</span>
+              <span class="stat-sub">Blok Terdaftar</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Total Luas</span>
+              <span class="stat-number" id="stat-total-luas">168 Ha</span>
+              <span class="stat-sub">Area Produktif</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Total Pohon</span>
+              <span class="stat-number" id="stat-total-pohon">8.400</span>
+              <span class="stat-sub">Pohon Sawit</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Kepadatan Rata-rata</span>
+              <span class="stat-number" id="stat-kepadatan">50</span>
+              <span class="stat-sub">Pohon / Ha</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 3: PERKEMBANGAN TANAMAN -->
+        <!-- ============================================ -->
+        <section id="view-perkembangan" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Perkembangan Tanaman</h1>
+              <p class="page-subtitle">Catatan Kegiatan, monitoring kesehatan, dan agronomi tanaman sawit</p>
+            </div>
+            <div class="header-actions">
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-kegiatan" placeholder="Cari kegiatan...">
+              </div>
+              <div class="select-wrapper">
+                <select id="filter-kegiatan-blok">
+                  <option value="all">Semua Blok</option>
+                  <option value="Blok A">Blok A</option>
+                  <option value="Blok B">Blok B</option>
+                  <option value="Blok C">Blok C</option>
+                  <option value="Blok D">Blok D</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btn-tambah-kegiatan">
+                <i data-lucide="plus"></i> Tambah Catatan
+              </button>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="card-header">
+              <h3 class="card-title">Catatan Kegiatan</h3>
+              <div class="table-actions">
+                <span class="badge badge-soft-green">Tercatat: <span id="count-kegiatan">6</span> Kegiatan</span>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="kegiatan-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Blok</th>
+                    <th>Jenis Kegiatan</th>
+                    <th>Deskripsi / Bahan</th>
+                    <th>Kondisi Tanaman</th>
+                    <th>Petugas</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="kegiatan-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 4: HASIL PANEN -->
+        <!-- ============================================ -->
+        <section id="view-hasil-panen" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Hasil Panen</h1>
+              <p class="page-subtitle">Pantau dan kelola hasil panen perkebunan sawit</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" onclick="exportTableToCSV('panen-table', 'Catatan_Panen_Sawit.csv')">
+                <i data-lucide="download"></i> Download Laporan
+              </button>
+              <button class="btn btn-primary" id="btn-tambah-panen">
+                <i data-lucide="plus"></i> Tambah Data Panen
+              </button>
+            </div>
+          </div>
+
+          <!-- Top Section: Monthly Harvest Bar Chart + Summary Card (Matches PDF) -->
+          <div class="panen-top-grid">
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Hasil Panen (Bulanan)</h3>
+                  <p class="card-subtitle">Volume panen tandan buah segar (TBS) dalam kilogram</p>
+                </div>
+                <span class="badge badge-soft-green">Tahun 2023</span>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="height: 280px;">
+                  <canvas id="chartPanenBulanan"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Ringkasan Panen Card -->
+            <div class="card ringkasan-card">
+              <div class="card-header">
+                <h3 class="card-title">Ringkasan</h3>
+                <i data-lucide="info" class="text-muted"></i>
+              </div>
+              <div class="card-body ringkasan-body">
+                <div class="ringkasan-item">
+                  <span class="label">Total Panen Bulan Ini</span>
+                  <span class="val font-bold" id="ringkasan-total-panen">8.900 kg</span>
+                </div>
+                <div class="ringkasan-item">
+                  <span class="label">Rata-rata Harga</span>
+                  <span class="val" id="ringkasan-rata-harga">Rp 1.244.314 / kg</span>
+                </div>
+                <div class="ringkasan-item highlight">
+                  <span class="label">Total Pendapatan</span>
+                  <span class="val text-success" id="ringkasan-total-pendapatan">Rp 11.000.000</span>
+                </div>
+                <div class="ringkasan-item">
+                  <span class="label">Pembeli Utama</span>
+                  <span class="val badge-buyer" id="ringkasan-pembeli">PT Sawit Jaya</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Section: Catatan Panen Table -->
+          <div class="card table-card mt-4">
+            <div class="card-header">
+              <h3 class="card-title">Catatan Panen</h3>
+              <div class="search-box sm">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-panen" placeholder="Cari catatan panen...">
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="panen-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Blok</th>
+                    <th>Jumlah (kg)</th>
+                    <th>Harga Satuan</th>
+                    <th>Total Pendapatan</th>
+                    <th>Pembeli</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="panen-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 5: MONITORING CUACA -->
+        <!-- ============================================ -->
+        <section id="view-monitoring-cuaca" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Monitoring Cuaca</h1>
+              <p class="page-subtitle">Pantau kondisi cuaca real-time perkebunan sawit</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" id="btn-sync-weather">
+                <i data-lucide="cloud-lightning"></i> Sync Stasiun Cuaca
+              </button>
+              <button class="btn btn-primary" id="btn-tambah-cuaca">
+                <i data-lucide="plus"></i> Tambah Data Cuaca
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Weather Metric Cards (Matching Screenshot) -->
+          <div class="weather-metrics-grid">
+            <div class="weather-card">
+              <div class="weather-icon-circle sun">
+                <i data-lucide="sun"></i>
+              </div>
+              <div class="weather-card-content">
+                <span class="weather-metric-label">Suhu Udara</span>
+                <div class="weather-metric-value">31°C</div>
+                <span class="weather-metric-sub">Optimal (26°C - 33°C)</span>
+              </div>
+            </div>
+
+            <div class="weather-card">
+              <div class="weather-icon-circle humidity">
+                <i data-lucide="droplet"></i>
+              </div>
+              <div class="weather-card-content">
+                <span class="weather-metric-label">Kelembaban</span>
+                <div class="weather-metric-value">81%</div>
+                <span class="weather-metric-sub">Kelembaban Tinggi</span>
+              </div>
+            </div>
+
+            <div class="weather-card">
+              <div class="weather-icon-circle rain">
+                <i data-lucide="cloud-rain"></i>
+              </div>
+              <div class="weather-card-content">
+                <span class="weather-metric-label">Curah Hujan</span>
+                <div class="weather-metric-value">45 mm</div>
+                <span class="weather-metric-sub">Hujan Sedang Teratur</span>
+              </div>
+            </div>
+
+            <div class="weather-card">
+              <div class="weather-icon-circle wind">
+                <i data-lucide="wind"></i>
+              </div>
+              <div class="weather-card-content">
+                <span class="weather-metric-label">Kecepatan Angin</span>
+                <div class="weather-metric-value">5 km/h</div>
+                <span class="weather-metric-sub">Tenang & Normal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7-Day Weather Trend Chart -->
+          <div class="card chart-card mt-4">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Tren Cuaca 7 Hari Terakhir</h3>
+                <p class="card-subtitle">Fluktuasi suhu rata-rata dan curah hujan harian</p>
+              </div>
+              <div class="chart-legend-custom">
+                <span class="legend-item"><span class="dot temp"></span> Suhu (°C)</span>
+                <span class="legend-item"><span class="dot rain"></span> Curah Hujan (mm)</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height: 320px;">
+                <canvas id="chartTrenCuaca"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catatan Cuaca Harian Table (from screenshot bottom left) -->
+          <div class="card table-card mt-4">
+            <div class="card-header">
+              <h3 class="card-title">Catatan Cuaca Harian</h3>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" onclick="exportTableToCSV('cuaca-table', 'Catatan_Cuaca_Harian.csv')">
+                  <i data-lucide="download"></i> Export CSV
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="cuaca-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Jam</th>
+                    <th>Suhu</th>
+                    <th>Kelembaban</th>
+                    <th>Curah Hujan</th>
+                    <th>Kondisi Cuaca</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="cuaca-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 6: LAPORAN -->
+        <!-- ============================================ -->
+        <section id="view-laporan" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Laporan</h1>
+              <p class="page-subtitle">Analisis menyeluruh hasil produksi, pendapatan, dan distribusi per blok</p>
+            </div>
+            <div class="header-actions">
+              <div class="select-wrapper">
+                <i data-lucide="calendar"></i>
+                <select id="select-periode-laporan">
+                  <option value="2023" selected>Laporan Bulanan 2023</option>
+                  <option value="2024">Laporan Bulanan 2024</option>
+                  <option value="2025">Laporan Bulanan 2025</option>
+                </select>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-outline" title="Export CSV" onclick="exportTableToCSV('tabel-laporan-tahunan', 'Laporan_Panen_2023.csv')">
+                  <i data-lucide="file-spreadsheet"></i> CSV
+                </button>
+                <button class="btn btn-outline" title="Export Excel" onclick="exportTableToCSV('tabel-laporan-tahunan', 'Laporan_Panen_2023.xls')">
+                  <i data-lucide="sheet"></i> Excel
+                </button>
+                <button class="btn btn-primary" title="Cetak / PDF" onclick="window.print()">
+                  <i data-lucide="printer"></i> Cetak / PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Row Charts: Hasil Panen per Bulan + Distribusi Hasil Panen (Pie) -->
+          <div class="laporan-charts-grid">
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Hasil Panen per Bulan</h3>
+                  <p class="card-subtitle">Volume panen TBS (Ton) per bulan</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="height: 280px;">
+                  <canvas id="chartLaporanBulanan"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Distribusi Hasil Panen</h3>
+                  <p class="card-subtitle">Persentase kontribusi produksi antar blok</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container pie-container" style="height: 280px;">
+                  <canvas id="chartDistribusiPanen"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Full Table Laporan Panen 2023 -->
+          <div class="card table-card mt-4">
+            <div class="card-header">
+              <h3 class="card-title" id="title-tabel-laporan">Tabel Laporan Panen 2023</h3>
+              <span class="badge badge-soft-green">Data Lengkap 12 Bulan</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="tabel-laporan-tahunan">
+                <thead>
+                  <tr>
+                    <th>Bulan</th>
+                    <th>Blok A (kg)</th>
+                    <th>Blok B (kg)</th>
+                    <th>Blok C (kg)</th>
+                    <th>Blok D (kg)</th>
+                    <th>Total Panen (kg)</th>
+                    <th>Pendapatan (Rp)</th>
+                  </tr>
+                </thead>
+                <tbody id="laporan-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+                <tfoot id="laporan-table-footer">
+                  <!-- Total row -->
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 7: MANAJEMEN PEKERJA -->
+        <!-- ============================================ -->
+        <section id="view-manajemen-pekerja" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Manajemen Pekerja</h1>
+              <p class="page-subtitle">Pengelolaan tenaga kerja lapangan, mandor, dan penuai kelapa sawit</p>
+            </div>
+            <div class="header-actions">
+              <div class="search-box">
+                <i data-lucide="search"></i>
+                <input type="text" id="search-pekerja" placeholder="Cari nama pekerja / posisi...">
+              </div>
+              <button class="btn btn-primary" id="btn-tambah-pekerja">
+                <i data-lucide="user-plus"></i> Tambah Pekerja
+              </button>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="card-header">
+              <h3 class="card-title">Daftar Karyawan Kebun</h3>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" onclick="exportTableToCSV('pekerja-table', 'Data_Pekerja.csv')">
+                  <i data-lucide="download"></i> Export CSV
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="pekerja-table">
+                <thead>
+                  <tr>
+                    <th>ID Pekerja</th>
+                    <th>Nama Lengkap</th>
+                    <th>Posisi / Jabatan</th>
+                    <th>Penugasan Blok</th>
+                    <th>No. Telepon</th>
+                    <th>Status Kerja</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="pekerja-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 8: PENGATURAN -->
+        <!-- ============================================ -->
+        <section id="view-pengaturan" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Pengaturan Sistem</h1>
+              <p class="page-subtitle">Konfigurasi parameter kebun, preferensi notifikasi, dan profil pengguna</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-primary" id="btn-save-settings">
+                <i data-lucide="save"></i> Simpan Perubahan
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Profil Perkebunan</h3>
+              </div>
+              <div class="card-body">
+                <form class="form-grid">
+                  <div class="form-group">
+                    <label>Nama Perkebunan</label>
+                    <input type="text" class="form-control" value="Kebun Sawit Sei Karang">
+                  </div>
+                  <div class="form-group">
+                    <label>Perusahaan / PT</label>
+                    <input type="text" class="form-control" value="PT Agro Sawit Lestari Mandiri">
+                  </div>
+                  <div class="form-group full-width">
+                    <label>Lokasi / Alamat Perkebunan</label>
+                    <input type="text" class="form-control" value="Jl. Poros Sawit No. 88, Riau, Sumatera">
+                  </div>
+                  <div class="form-group">
+                    <label>Target Produksi Tahunan (Ton)</label>
+                    <input type="number" class="form-control" value="300">
+                  </div>
+                  <div class="form-group">
+                    <label>Standar Harga Acuan TBS (Rp/kg)</label>
+                    <input type="number" class="form-control" value="2500">
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Notifikasi & Sensor</h3>
+              </div>
+              <div class="card-body">
+                <div class="toggle-list">
+                  <div class="toggle-item">
+                    <div>
+                      <strong>Peringatan Cuaca Ekstrem</strong>
+                      <p class="text-muted">Kirim notifikasi otomatis jika curah hujan > 40 mm</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="toggle-item">
+                    <div>
+                      <strong>Pengingat Jadwal Pemupukan</strong>
+                      <p class="text-muted">Notifikasi H-1 sebelum jadwal pemupukan blok</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div class="toggle-item">
+                    <div>
+                      <strong>Sinkronisasi Stasiun Cuaca IoT Otomatis</strong>
+                      <p class="text-muted">Tarik telemetry cuaca tiap 15 menit</p>
+                    </div>
+                    <label class="switch">
+                      <input type="checkbox" checked>
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cloudflare D1 & Workers Backend Configuration -->
+            <div class="card" style="grid-column: 1 / -1;">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title"><i data-lucide="cloud" style="color:var(--primary-green); vertical-align:middle;"></i> Koneksi Backend & Database Cloudflare D1</h3>
+                  <p class="card-subtitle">Hubungkan frontend Vercel dengan Cloudflare Workers & Database D1 Edge SQLite</p>
+                </div>
+                <span class="badge badge-soft-green" id="badge-api-status">Lokal / Standalone</span>
+              </div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label>URL Endpoint Cloudflare Worker API</label>
+                    <div style="display:flex; gap:10px;">
+                      <input type="url" id="setting-api-url" class="form-control" placeholder="https://sawit-pintar-api.your-subdomain.workers.dev" style="flex:1;">
+                      <button type="button" class="btn btn-primary" id="btn-save-api-url">
+                        <i data-lucide="check"></i> Simpan & Uji Koneksi
+                      </button>
+                    </div>
+                    <small class="text-muted" style="font-size:11.5px; margin-top:4px; display:block;">
+                      Kosongkan untuk menggunakan mode standalone (LocalStorage). Setelah men-deploy Cloudflare Worker Anda, masukkan URL API di atas untuk sinkronisasi database cloud realtime.
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- MODALS FOR ADD / EDIT -->
+  <!-- ============================================ -->
+
+  <!-- Modal Tambah Lahan -->
+  <div class="modal-overlay hidden" id="modal-lahan">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-lahan-title">Tambah Lahan Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-lahan')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-lahan" onsubmit="handleSaveLahan(event)">
+        <input type="hidden" id="lahan-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nama Lahan / Blok <span class="required">*</span></label>
+            <input type="text" id="lahan-nama" class="form-control" placeholder="Contoh: Blok E" required>
+          </div>
+          <div class="form-group">
+            <label>Lokasi <span class="required">*</span></label>
+            <input type="text" id="lahan-lokasi" class="form-control" placeholder="Contoh: Divisi 3 Selatan" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Luas Lahan (Ha) <span class="required">*</span></label>
+              <input type="number" id="lahan-luas" class="form-control" placeholder="Ha" step="0.1" required>
+            </div>
+            <div class="form-group">
+              <label>Jumlah Pohon <span class="required">*</span></label>
+              <input type="number" id="lahan-pohon" class="form-control" placeholder="Jumlah" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Varietas Bibit</label>
+              <select id="lahan-varietas" class="form-control">
+                <option value="Marihat">Marihat</option>
+                <option value="Tenera">Tenera</option>
+                <option value="Dumpy">Dumpy</option>
+                <option value="Socfin">Socfin</option>
+                <option value="Yangambi">Yangambi</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Status Lahan</label>
+              <select id="lahan-status" class="form-control">
+                <option value="Produktif">Produktif</option>
+                <option value="Siap Panen">Siap Panen</option>
+                <option value="Peremajaan">Peremajaan</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Mandor / Penanggung Jawab Blok</label>
+            <select id="lahan-mandor" class="form-control">
+              <!-- Terisi otomatis dari daftar pekerja -->
+            </select>
+            <small class="text-muted" style="font-size:11px; margin-top:3px;">
+              *Terhubung langsung dengan data Manajemen Pekerja
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-lahan')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Lahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Kegiatan Perkembangan -->
+  <div class="modal-overlay hidden" id="modal-kegiatan">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-kegiatan-title">Tambah Catatan Kegiatan</h3>
+        <button class="modal-close" onclick="closeModal('modal-kegiatan')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-kegiatan" onsubmit="handleSaveKegiatan(event)">
+        <input type="hidden" id="kegiatan-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tanggal <span class="required">*</span></label>
+              <input type="date" id="kegiatan-tanggal" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Pilih Blok <span class="required">*</span></label>
+              <select id="kegiatan-blok" class="form-control" required>
+                <option value="Blok A">Blok A</option>
+                <option value="Blok B">Blok B</option>
+                <option value="Blok C">Blok C</option>
+                <option value="Blok D">Blok D</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Jenis Kegiatan <span class="required">*</span></label>
+            <select id="kegiatan-jenis" class="form-control" required>
+              <option value="Pemupukan">Pemupukan</option>
+              <option value="Pemangkasan">Pemangkasan</option>
+              <option value="Pengendalian Hama">Pengendalian Hama</option>
+              <option value="Pemanenan">Pemanenan</option>
+              <option value="Kastrasi">Kastrasi</option>
+              <option value="Sanitasi Lahan">Sanitasi Lahan</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Deskripsi / Bahan yang Digunakan <span class="required">*</span></label>
+            <input type="text" id="kegiatan-deskripsi" class="form-control" placeholder="Contoh: Pupuk NPK 1kg/pohon" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kondisi Tanaman</label>
+              <select id="kegiatan-kondisi" class="form-control">
+                <option value="Sangat Baik">Sangat Baik</option>
+                <option value="Normal">Normal</option>
+                <option value="Perlu Perhatian">Perlu Perhatian</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Petugas / Penanggung Jawab</label>
+              <input type="text" id="kegiatan-petugas" class="form-control" placeholder="Contoh: Mandor Sutrisno" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-kegiatan')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Catatan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Catatan Panen -->
+  <div class="modal-overlay hidden" id="modal-panen">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-panen-title">Tambah Data Panen</h3>
+        <button class="modal-close" onclick="closeModal('modal-panen')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-panen" onsubmit="handleSavePanen(event)">
+        <input type="hidden" id="panen-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tanggal Panen <span class="required">*</span></label>
+              <input type="date" id="panen-tanggal" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Blok Lahan <span class="required">*</span></label>
+              <select id="panen-blok" class="form-control" required>
+                <option value="Blok A">Blok A</option>
+                <option value="Blok B">Blok B</option>
+                <option value="Blok C">Blok C</option>
+                <option value="Blok D">Blok D</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Jumlah Hasil (kg) <span class="required">*</span></label>
+              <input type="number" id="panen-jumlah" class="form-control" placeholder="kg" required oninput="calculateTotalPanen()">
+            </div>
+            <div class="form-group">
+              <label>Harga Satuan (Rp/kg) <span class="required">*</span></label>
+              <input type="number" id="panen-harga" class="form-control" value="2500" required oninput="calculateTotalPanen()">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Estimasi Total Pendapatan</label>
+            <input type="text" id="panen-total" class="form-control" readonly value="Rp 0">
+          </div>
+          <div class="form-group">
+            <label>Perusahaan Pembeli <span class="required">*</span></label>
+            <input type="text" id="panen-pembeli" class="form-control" value="PT Sawit Jaya" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-panen')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Panen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Data Cuaca -->
+  <div class="modal-overlay hidden" id="modal-cuaca">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Tambah Data Cuaca Lapangan</h3>
+        <button class="modal-close" onclick="closeModal('modal-cuaca')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-cuaca" onsubmit="handleSaveCuaca(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tanggal</label>
+              <input type="date" id="cuaca-tanggal" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Jam Pengukuran</label>
+              <input type="time" id="cuaca-jam" class="form-control" value="12:00" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Suhu (°C)</label>
+              <input type="number" id="cuaca-suhu" class="form-control" value="31" step="0.5" required>
+            </div>
+            <div class="form-group">
+              <label>Kelembaban (%)</label>
+              <input type="number" id="cuaca-kelembaban" class="form-control" value="80" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Curah Hujan (mm)</label>
+              <input type="number" id="cuaca-curah" class="form-control" value="0" required>
+            </div>
+            <div class="form-group">
+              <label>Kondisi Cuaca</label>
+              <select id="cuaca-kondisi" class="form-control">
+                <option value="Cerah">Cerah</option>
+                <option value="Cerah Berawan">Cerah Berawan</option>
+                <option value="Mendung">Mendung</option>
+                <option value="Hujan Ringan">Hujan Ringan</option>
+                <option value="Hujan Sedang">Hujan Sedang</option>
+                <option value="Hujan Lebat">Hujan Lebat</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-cuaca')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Cuaca</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah / Edit Pekerja & Profil (Unified) -->
+  <div class="modal-overlay hidden" id="modal-pekerja">
+    <div class="modal-container" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-pekerja-title">Tambah Pekerja Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-pekerja')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-pekerja" onsubmit="handleSavePekerja(event)">
+        <input type="hidden" id="pekerja-id">
+        <div class="modal-body">
+          <!-- Foto Profil & Avatar Selection -->
+          <div class="profile-avatar-edit-box">
+            <div class="avatar-preview-wrapper">
+              <img id="pekerja-avatar-preview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Avatar Pekerja" onerror="this.src='https://ui-avatars.com/api/?name=Pekerja&background=2E7D32&color=fff'">
+            </div>
+            <div class="avatar-change-control">
+              <label>Foto Profil / Avatar</label>
+              <select id="pekerja-avatar-select" class="form-control" onchange="handlePekerjaAvatarChange(this.value)">
+                <option value="preset1">Avatar 1 (Foto Default)</option>
+                <option value="preset2">Avatar 2 (Pria Formal)</option>
+                <option value="preset3">Avatar 3 (Pria Lapangan)</option>
+                <option value="preset4">Avatar 4 (Inisial Hijau)</option>
+                <option value="custom">URL Foto Kustom...</option>
+              </select>
+              <input type="url" id="pekerja-avatar-custom" class="form-control hidden" placeholder="Masukkan URL foto (https://...)" style="margin-top:6px;">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>ID / NIK Pekerja <span class="required">*</span></label>
+              <input type="text" id="pekerja-kode" class="form-control" placeholder="Contoh: PK-07" required>
+            </div>
+            <div class="form-group">
+              <label>Status Kerja</label>
+              <select id="pekerja-status" class="form-control">
+                <option value="Tetap">Tetap</option>
+                <option value="Kontrak">Kontrak</option>
+                <option value="Harian Lepas">Harian Lepas</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nama Lengkap (Beserta Gelar) <span class="required">*</span></label>
+            <input type="text" id="pekerja-nama" class="form-control" placeholder="Contoh: Wirawan, S.Kom" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Posisi / Jabatan <span class="required">*</span></label>
+              <select id="pekerja-posisi" class="form-control" required onchange="handlePekerjaPosisiChange(this.value)">
+                <option value="Estate Manager">Estate Manager (Kepala Kebun)</option>
+                <option value="Mandor Lapangan">Mandor Lapangan</option>
+                <option value="Mandor Panen">Mandor Panen</option>
+                <option value="Penuai / Pemanen">Penuai / Pemanen</option>
+                <option value="Operator Sensor & Traktor">Operator Sensor & Traktor</option>
+                <option value="Petugas Pemupukan & Rawat">Petugas Pemupukan & Rawat</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Penugasan Blok Lahan <span class="required">*</span></label>
+              <select id="pekerja-blok" class="form-control" required>
+                <!-- Terisi otomatis dari daftar lahan -->
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Email Perusahaan / Pribadi</label>
+              <input type="email" id="pekerja-email" class="form-control" placeholder="nama@sawitlestari.com">
+            </div>
+            <div class="form-group">
+              <label>No. Telepon / WhatsApp <span class="required">*</span></label>
+              <input type="text" id="pekerja-telp" class="form-control" placeholder="Contoh: 0812-3456-7890" required>
+            </div>
+          </div>
+
+          <div class="form-group" id="pekerja-estate-notice">
+            <small class="text-muted" style="font-size:11.5px; background:#f4faf6; padding:8px 12px; border-radius:6px; display:block; border-left:3px solid var(--accent-emerald);">
+              <i data-lucide="check-circle-2" style="width:14px; height:14px; vertical-align:middle; color:var(--accent-emerald);"></i>
+              <strong>Sinkronisasi Profil Otomatis:</strong> Mengubah nama, foto profil, jabatan, dan kontak pada <strong>Estate Manager</strong> akan langsung otomatis menyinkronkan profil header atas dan sidebar sistem secara real-time.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-pekerja')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-pekerja"><i data-lucide="save"></i> Simpan Data Karyawan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Detail Lahan & Tim Lapangan -->
+  <div class="modal-overlay hidden" id="modal-detail-lahan">
+    <div class="modal-container" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detail-lahan-title">Detail Lahan & Penanggung Jawab</h3>
+        <button class="modal-close" onclick="closeModal('modal-detail-lahan')"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body" id="detail-lahan-body">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('modal-detail-lahan')">Tutup</button>
+        <button type="button" class="btn btn-primary" id="btn-jump-to-workers"><i data-lucide="users"></i> Kelola di Manajemen Pekerja</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- API Client & Application Logic -->
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

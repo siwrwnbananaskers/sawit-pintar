@@ -1,0 +1,10 @@
+name = "sawit-pintar-api"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+# D1 Database Binding
+# Ganti database_id setelah menjalankan: npx wrangler d1 create sawit-pintar-db
+[[d1_databases]]
+binding = "DB"
+database_name = "sawit-pintar-db"
+database_id = "8b5fd704-bbdd-40bc-b3a6-9bf1874f0b51"
