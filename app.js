@@ -676,7 +676,7 @@ function renderCuacaTable() {
   tbody.innerHTML = state.cuacaList.map(item => `
     <tr>
       <td><strong>${formatTanggal(item.tanggal)}</strong></td>
-      <td>${item.jam} WIB</td>
+      <td>${item.jam ? item.jam.replace(/\s*WIB/gi, '') : '12:00'} WIB</td>
       <td><strong>${item.suhu}°C</strong></td>
       <td>${item.kelembaban}%</td>
       <td>${item.curah} mm</td>
@@ -1331,10 +1331,11 @@ async function syncWeatherData() {
   };
 
   let fetchedList = [];
+  const todayStr = new Date().toISOString().split('T')[0];
 
   try {
-    // Open-Meteo 7-day past telemetry for Tegalsari, Kec. Megang Sakti, Kab. Musi Rawas, Sumsel (Lat: -3.1764, Lon: 102.9902)
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-3.1764&longitude=102.9902&past_days=6&daily=temperature_2m_max,relative_humidity_2m_mean,rain_sum,weather_code,wind_speed_10m_max&timezone=Asia%2FJakarta';
+    // Open-Meteo 7-day past telemetry (past_days=6 + forecast_days=1 = exactly 7 days from 22 Sep to 28 Sep)
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-3.1764&longitude=102.9902&past_days=6&forecast_days=1&daily=temperature_2m_max,relative_humidity_2m_mean,rain_sum,weather_code,wind_speed_10m_max&timezone=Asia%2FJakarta';
     const res = await fetch(url, {
       signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined
     });
@@ -1343,10 +1344,12 @@ async function syncWeatherData() {
       const data = await res.json();
       if (data && data.daily && data.daily.time) {
         const d = data.daily;
-        const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+        const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
         for (let i = 0; i < d.time.length; i++) {
           const tgl = d.time[i];
+          if (tgl > todayStr) continue; // Safety filter for past/current dates only
+
           const suhu = Math.round(d.temperature_2m_max[i] || 30);
           const kelembaban = Math.round(d.relative_humidity_2m_mean[i] || 78);
           const curah = Math.round((d.rain_sum[i] || 0) * 10) / 10;
@@ -1357,7 +1360,7 @@ async function syncWeatherData() {
           fetchedList.push({
             id: Date.now() + i,
             tanggal: tgl,
-            jam: i === d.time.length - 1 ? nowTime : '12:00 WIB',
+            jam: i === d.time.length - 1 ? nowTime : '12:00',
             suhu,
             kelembaban,
             curah,
@@ -1374,7 +1377,7 @@ async function syncWeatherData() {
   // IoT Simulation fallback if network request fails
   if (fetchedList.length === 0) {
     const todayObj = new Date();
-    const nowTime = todayObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
+    const nowTime = todayObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     const kondisiOptions = ['Cerah', 'Cerah Berawan', 'Berawan', 'Hujan Ringan', 'Hujan Sedang'];
 
     for (let i = 6; i >= 0; i--) {
@@ -1391,7 +1394,7 @@ async function syncWeatherData() {
       fetchedList.push({
         id: Date.now() + i,
         tanggal: isoDate,
-        jam: i === 0 ? nowTime : '12:00 WIB',
+        jam: i === 0 ? nowTime : '12:00',
         suhu,
         kelembaban,
         curah,
@@ -1401,9 +1404,9 @@ async function syncWeatherData() {
     }
   }
 
-  // Replace or prepend the fetched 7 days data into state.cuacaList
+  // Clean up any old future dates (> todayStr) and replace past 7 days
   const fetchedDates = new Set(fetchedList.map(item => item.tanggal));
-  const remaining = state.cuacaList.filter(item => !fetchedDates.has(item.tanggal));
+  const remaining = state.cuacaList.filter(item => item.tanggal <= todayStr && !fetchedDates.has(item.tanggal));
   
   const newestFirst = [...fetchedList].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   state.cuacaList = [...newestFirst, ...remaining];
