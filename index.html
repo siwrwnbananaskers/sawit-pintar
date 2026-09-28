@@ -667,7 +667,10 @@
           <div class="card table-card mt-4">
             <div class="card-header">
               <h3 class="card-title">Catatan Cuaca Harian</h3>
-              <div class="table-actions">
+              <div class="table-actions" style="display:flex; gap:8px;">
+                <button class="btn btn-sm btn-outline" id="btn-clear-all-cuaca" style="color:#dc2626; border-color:#fca5a5;">
+                  <i data-lucide="trash-2"></i> Hapus Semua Data
+                </button>
                 <button class="btn btn-sm btn-outline" onclick="exportTableToCSV('cuaca-table', 'Catatan_Cuaca_Harian.csv')">
                   <i data-lucide="download"></i> Export CSV
                 </button>

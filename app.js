@@ -215,6 +215,8 @@ async function loadSavedData() {
 
   if (state.cuacaList && state.cuacaList.length > 0) {
     updateWeatherUI(state.cuacaList[0]);
+  } else {
+    updateWeatherUI(null);
   }
 }
 
@@ -1235,15 +1237,6 @@ async function deleteCuaca(id) {
    WEATHER REALTIME SYNC & IoT TELEMETRY (Tegalsari, Megang Sakti, Musi Rawas)
    ========================================================================== */
 function updateWeatherUI(w, timeStr) {
-  if (!w) return;
-
-  const suhu = Math.round(w.suhu);
-  const kelembaban = Math.round(w.kelembaban);
-  const curah = Math.round(w.curah);
-  const angin = Math.round(w.angin || 5);
-  const kondisi = w.kondisi || 'Cerah Berawan';
-
-  // Update Monitoring Cuaca Cards
   const elSuhu = document.getElementById('weather-card-suhu');
   const elSuhuSub = document.getElementById('weather-card-suhu-sub');
   const elHum = document.getElementById('weather-card-kelembaban');
@@ -1252,6 +1245,41 @@ function updateWeatherUI(w, timeStr) {
   const elCurahSub = document.getElementById('weather-card-curah-sub');
   const elAngin = document.getElementById('weather-card-angin');
   const elAnginSub = document.getElementById('weather-card-angin-sub');
+
+  const dTemp = document.getElementById('dash-weather-temp');
+  const dStatus = document.getElementById('dash-weather-status');
+  const dTime = document.getElementById('dash-weather-time');
+  const dHum = document.getElementById('dash-weather-humidity');
+  const dRain = document.getElementById('dash-weather-rain');
+  const dWind = document.getElementById('dash-weather-wind');
+
+  if (!w) {
+    if (elSuhu) elSuhu.textContent = '- °C';
+    if (elSuhuSub) elSuhuSub.textContent = 'Belum Ada Data';
+
+    if (elHum) elHum.textContent = '- %';
+    if (elHumSub) elHumSub.textContent = 'Belum Ada Data';
+
+    if (elCurah) elCurah.textContent = '- mm';
+    if (elCurahSub) elCurahSub.textContent = 'Belum Ada Data';
+
+    if (elAngin) elAngin.textContent = '- km/h';
+    if (elAnginSub) elAnginSub.textContent = 'Belum Ada Data';
+
+    if (dTemp) dTemp.textContent = '- °C';
+    if (dStatus) dStatus.textContent = 'Belum Ada Data';
+    if (dTime) dTime.textContent = 'Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas';
+    if (dHum) dHum.textContent = '- %';
+    if (dRain) dRain.textContent = '- mm';
+    if (dWind) dWind.textContent = '- km/h';
+    return;
+  }
+
+  const suhu = Math.round(w.suhu);
+  const kelembaban = Math.round(w.kelembaban);
+  const curah = Math.round(w.curah);
+  const angin = Math.round(w.angin || 5);
+  const kondisi = w.kondisi || 'Cerah Berawan';
 
   if (elSuhu) elSuhu.textContent = `${suhu}°C`;
   if (elSuhuSub) elSuhuSub.textContent = suhu > 32 ? 'Suhu Tinggi (Panas)' : (suhu < 26 ? 'Suhu Sejuk' : 'Optimal (26°C - 33°C)');
@@ -1265,14 +1293,6 @@ function updateWeatherUI(w, timeStr) {
   if (elAngin) elAngin.textContent = `${angin} km/h`;
   if (elAnginSub) elAnginSub.textContent = angin > 12 ? 'Angin Kencang' : 'Tenang & Normal';
 
-  // Update Dashboard Weather Mini Widget
-  const dTemp = document.getElementById('dash-weather-temp');
-  const dStatus = document.getElementById('dash-weather-status');
-  const dTime = document.getElementById('dash-weather-time');
-  const dHum = document.getElementById('dash-weather-humidity');
-  const dRain = document.getElementById('dash-weather-rain');
-  const dWind = document.getElementById('dash-weather-wind');
-
   if (dTemp) dTemp.textContent = `${suhu}°C`;
   if (dStatus) dStatus.textContent = kondisi;
   if (dTime) dTime.textContent = 'Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas';
@@ -1282,7 +1302,15 @@ function updateWeatherUI(w, timeStr) {
 }
 
 function updateWeatherChart() {
-  if (!charts.trenCuaca || !state.cuacaList || state.cuacaList.length === 0) return;
+  if (!charts.trenCuaca) return;
+
+  if (!state.cuacaList || state.cuacaList.length === 0) {
+    charts.trenCuaca.data.labels = [];
+    charts.trenCuaca.data.datasets[0].data = [];
+    charts.trenCuaca.data.datasets[1].data = [];
+    charts.trenCuaca.update();
+    return;
+  }
 
   const dayNameMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
@@ -1308,6 +1336,40 @@ function updateWeatherChart() {
   charts.trenCuaca.data.datasets[0].data = temps;
   charts.trenCuaca.data.datasets[1].data = rains;
   charts.trenCuaca.update();
+}
+
+async function clearAllCuaca() {
+  if (!state.cuacaList || state.cuacaList.length === 0) {
+    showToast('Tidak ada data cuaca untuk dihapus.', 'error');
+    return;
+  }
+
+  if (confirm('Apakah Anda yakin ingin menghapus SEMUA data cuaca? Data grafik, tabel, dan indikator akan dikosongkan.')) {
+    const itemsToDelete = [...state.cuacaList];
+    state.cuacaList = [];
+    saveLocalState();
+
+    // Delete from Cloudflare D1 Backend if online
+    const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
+    if (api && api.isOnline()) {
+      for (const item of itemsToDelete) {
+        if (item.id) {
+          try {
+            await api.cuaca.delete(item.id);
+          } catch (e) {
+            console.warn('Cloud sync error deleting cuaca item', e);
+          }
+        }
+      }
+    }
+
+    // Reset UI components to empty state
+    updateWeatherUI(null);
+    updateWeatherChart();
+    renderCuacaTable();
+
+    showToast('Seluruh data cuaca telah berhasil dihapus!', 'error');
+  }
 }
 
 async function syncWeatherData() {
@@ -1507,8 +1569,9 @@ function initEventListeners() {
     renderPekerjaTable(filtered);
   });
 
-  // Weather Sync button
+  // Weather Sync & Clear buttons
   document.getElementById('btn-sync-weather')?.addEventListener('click', syncWeatherData);
+  document.getElementById('btn-clear-all-cuaca')?.addEventListener('click', clearAllCuaca);
 
   // Refresh Dashboard
   document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
