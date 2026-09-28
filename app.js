@@ -1304,10 +1304,10 @@ function initEventListeners() {
     const input = document.getElementById('setting-api-url');
     const url = input ? input.value : '';
 
-    if (window.ApiService) {
-      ApiService.setBaseUrl(url);
+    const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
+    if (api) {
       showToast('Menguji koneksi ke Cloudflare Worker...');
-      const ok = await ApiService.checkConnection();
+      const ok = await api.setBaseUrl(url);
       updateApiStatusBadge(ok);
 
       if (ok) {
@@ -1319,6 +1319,8 @@ function initEventListeners() {
       } else {
         showToast('Kembali ke mode standalone lokal (LocalStorage).', 'success');
       }
+    } else {
+      showToast('ApiService tidak terdefinisi!', 'error');
     }
   });
 

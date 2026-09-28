@@ -19,7 +19,7 @@ const ApiService = (() => {
   function setBaseUrl(url) {
     baseUrl = url.trim().replace(/\/$/, '');
     localStorage.setItem(CONFIG_KEY, baseUrl);
-    checkConnection();
+    return checkConnection();
   }
 
   function getBaseUrl() {
@@ -34,7 +34,11 @@ const ApiService = (() => {
     }
 
     try {
-      const res = await fetch(`${baseUrl}/api`, { signal: AbortSignal.timeout(3500) });
+      const options = {};
+      if (typeof AbortSignal !== 'undefined' && AbortSignal.timeout) {
+        options.signal = AbortSignal.timeout(3500);
+      }
+      const res = await fetch(`${baseUrl}/api`, options);
       const data = await res.json();
       isConnectedToCloud = (data.status === 'ok');
       updateSyncBadge(isConnectedToCloud);
@@ -203,3 +207,5 @@ const ApiService = (() => {
     laporan: { get: getLaporan }
   };
 })();
+
+window.ApiService = ApiService;
