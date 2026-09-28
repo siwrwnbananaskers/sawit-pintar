@@ -130,6 +130,12 @@ const state = {
     lon: 102.9902
   },
 
+  // Weather Table Pagination State
+  cuacaPagination: {
+    currentPage: 1,
+    pageSize: 7
+  },
+
   // Laporan Panen 2023 Bulanan
   laporan2023: [
     { bulan: 'Januari', blokA: 2200, blokB: 1800, blokC: 1950, blokD: 1600, harga: 2450 },
@@ -722,7 +728,7 @@ function renderCuacaTable() {
     filtered = filtered.filter(item => (item.lokasi || 'Tegalsari, Musi Rawas') === filterLokasi);
   }
 
-  // Calculate Rekap Stats
+  // Calculate Rekap Stats (over full filtered dataset)
   const recTotal = document.getElementById('rekap-text-total');
   const recSuhu = document.getElementById('rekap-text-suhu');
   const recHujan = document.getElementById('rekap-text-hujan');
@@ -744,6 +750,47 @@ function renderCuacaTable() {
     if (recHum) recHum.textContent = `Kelembaban Rerata: -%`;
   }
 
+  // Pagination bounds & slice calculation
+  const totalRecords = filtered.length;
+  const pageSize = state.cuacaPagination.pageSize || 7;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+  if (state.cuacaPagination.currentPage > totalPages) {
+    state.cuacaPagination.currentPage = totalPages;
+  }
+  if (state.cuacaPagination.currentPage < 1) {
+    state.cuacaPagination.currentPage = 1;
+  }
+
+  const currentPage = state.cuacaPagination.currentPage;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalRecords);
+
+  // Update Pagination Controls UI
+  const infoEl = document.getElementById('cuaca-pagination-info');
+  const pageNumEl = document.getElementById('cuaca-page-num');
+  const prevBtn = document.getElementById('btn-cuaca-prev');
+  const nextBtn = document.getElementById('btn-cuaca-next');
+
+  if (infoEl) {
+    if (totalRecords === 0) {
+      infoEl.textContent = 'Menampilkan 0 data';
+    } else {
+      infoEl.textContent = `Menampilkan ${startIndex + 1}-${endIndex} dari ${totalRecords} data`;
+    }
+  }
+
+  if (pageNumEl) {
+    pageNumEl.textContent = `Halaman ${currentPage} / ${totalPages}`;
+  }
+
+  if (prevBtn) {
+    prevBtn.disabled = currentPage <= 1 || totalRecords === 0;
+  }
+  if (nextBtn) {
+    nextBtn.disabled = currentPage >= totalPages || totalRecords === 0;
+  }
+
   if (filtered.length === 0) {
     tbody.innerHTML = `
       <tr>
@@ -755,7 +802,9 @@ function renderCuacaTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(item => `
+  const pageData = filtered.slice(startIndex, endIndex);
+
+  tbody.innerHTML = pageData.map(item => `
     <tr>
       <td><strong>${formatTanggal(item.tanggal)}</strong></td>
       <td>${item.jam ? item.jam.replace(/\s*WIB/gi, '') : '12:00'} WIB</td>
@@ -1609,7 +1658,96 @@ async function syncWeatherData() {
   }
 
   const latest = state.cuacaList[0];
-  showToast(`Berhasil menarik data 7 hari terakhir Stasiun IoT Tegalsari, Musi Rawas! Terkini (${latest.tanggal}): ${latest.suhu}°C, ${latest.kondisi}`, 'success');
+  showToast(`Berhasil menarik data 7 hari terakhir Stasiun IoT ${loc.name}! Terkini (${latest.tanggal}): ${latest.suhu}°C, ${latest.kondisi}`, 'success');
+}
+
+/* ==========================================================================
+   GPS DEVICE GEOLOCATION AUTO-DETECTION
+   ========================================================================== */
+async function handleDetectGPS() {
+  const detectBtn = document.getElementById('btn-detect-gps');
+  if (!navigator.geolocation) {
+    showToast('Browser atau device Anda tidak mendukung GPS Geolocation.', 'error');
+    return;
+  }
+
+  if (detectBtn) {
+    detectBtn.disabled = true;
+    detectBtn.innerHTML = `<i data-lucide="loader" class="spin"></i> Mendeteksi GPS...`;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  showToast('Meminta akses koordinat GPS device...');
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = parseFloat(position.coords.latitude.toFixed(4));
+      const lon = parseFloat(position.coords.longitude.toFixed(4));
+
+      const wLat = document.getElementById('setting-weather-lat');
+      const wLon = document.getElementById('setting-weather-lon');
+      const wName = document.getElementById('setting-weather-name');
+      const wPreset = document.getElementById('setting-weather-preset');
+
+      if (wLat) wLat.value = lat;
+      if (wLon) wLon.value = lon;
+      if (wPreset) wPreset.value = 'gps';
+
+      let locationName = `Lokasi GPS (${lat}, ${lon})`;
+
+      // Reverse geocoding via OpenStreetMap Nominatim API
+      try {
+        const reverseUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`;
+        const res = await fetch(reverseUrl, {
+          headers: { 'Accept-Language': 'id' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.address) {
+            const addr = data.address;
+            const village = addr.village || addr.suburb || addr.neighbourhood || addr.hamlet || '';
+            const town = addr.town || addr.city || addr.municipality || addr.county || '';
+            const stateName = addr.state || '';
+            const parts = [village, town, stateName].filter(Boolean);
+            if (parts.length > 0) {
+              locationName = parts.join(', ');
+            } else if (data.display_name) {
+              locationName = data.display_name.split(',').slice(0, 3).join(',');
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Reverse geocoding error:', e);
+      }
+
+      if (wName) wName.value = locationName;
+
+      if (detectBtn) {
+        detectBtn.disabled = false;
+        detectBtn.innerHTML = `<i data-lucide="navigation"></i> Deteksi GPS Device Saya`;
+        if (window.lucide) lucide.createIcons();
+      }
+
+      showToast(`Berhasil mendeteksi lokasi GPS: ${locationName} (${lat}, ${lon})!`, 'success');
+    },
+    (error) => {
+      if (detectBtn) {
+        detectBtn.disabled = false;
+        detectBtn.innerHTML = `<i data-lucide="navigation"></i> Deteksi GPS Device Saya`;
+        if (window.lucide) lucide.createIcons();
+      }
+      let msg = 'Gagal mengambil koordinat GPS device.';
+      if (error.code === error.PERMISSION_DENIED) {
+        msg = 'Izin akses lokasi GPS ditolak oleh pengguna/browser.';
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        msg = 'Informasi lokasi GPS tidak tersedia.';
+      } else if (error.code === error.TIMEOUT) {
+        msg = 'Waktu permintaan lokasi GPS habis (timeout).';
+      }
+      showToast(`${msg} Silakan masukkan koordinat secara manual.`, 'error');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
 }
 
 /* ==========================================================================
@@ -1675,13 +1813,48 @@ function initEventListeners() {
   document.getElementById('btn-sync-weather')?.addEventListener('click', syncWeatherData);
   document.getElementById('btn-clear-all-cuaca')?.addEventListener('click', clearAllCuaca);
 
-  // Weather Table Month & Location Filters
-  document.getElementById('filter-cuaca-bulan')?.addEventListener('change', renderCuacaTable);
-  document.getElementById('filter-cuaca-lokasi')?.addEventListener('change', renderCuacaTable);
+  // Weather Table Month & Location Filters (Reset page to 1)
+  document.getElementById('filter-cuaca-bulan')?.addEventListener('change', () => {
+    state.cuacaPagination.currentPage = 1;
+    renderCuacaTable();
+  });
+  document.getElementById('filter-cuaca-lokasi')?.addEventListener('change', () => {
+    state.cuacaPagination.currentPage = 1;
+    renderCuacaTable();
+  });
+
+  // Weather Table Pagination Prev & Next
+  document.getElementById('btn-cuaca-prev')?.addEventListener('click', () => {
+    if (state.cuacaPagination.currentPage > 1) {
+      state.cuacaPagination.currentPage--;
+      renderCuacaTable();
+    }
+  });
+
+  document.getElementById('btn-cuaca-next')?.addEventListener('click', () => {
+    const filterBulan = document.getElementById('filter-cuaca-bulan')?.value || 'all';
+    const filterLokasi = document.getElementById('filter-cuaca-lokasi')?.value || 'all';
+    let filtered = state.cuacaList || [];
+    if (filterBulan !== 'all') filtered = filtered.filter(i => i.tanggal && i.tanggal.startsWith(filterBulan));
+    if (filterLokasi !== 'all') filtered = filtered.filter(i => (i.lokasi || 'Tegalsari, Musi Rawas') === filterLokasi);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / state.cuacaPagination.pageSize));
+    if (state.cuacaPagination.currentPage < totalPages) {
+      state.cuacaPagination.currentPage++;
+      renderCuacaTable();
+    }
+  });
+
+  // GPS Device Location Auto-Detection Button
+  document.getElementById('btn-detect-gps')?.addEventListener('click', handleDetectGPS);
 
   // Preset Weather Location change handler
   document.getElementById('setting-weather-preset')?.addEventListener('change', (e) => {
     const val = e.target.value;
+    if (val === 'gps') {
+      handleDetectGPS();
+      return;
+    }
     const presets = {
       musi_rawas: { name: 'Tegalsari, Megang Sakti, Musi Rawas', lat: -3.1764, lon: 102.9902 },
       sei_karang: { name: 'Kebun Sei Karang, Galang', lat: 3.4562, lon: 98.8872 },

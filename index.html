@@ -716,6 +716,21 @@
                 </tbody>
               </table>
             </div>
+            <!-- Table Pagination Bar -->
+            <div class="card-footer" style="padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); flex-wrap: wrap; gap: 10px;">
+              <div style="font-size: 13px; color: var(--text-muted);" id="cuaca-pagination-info">
+                Menampilkan 1-7 dari 0 data
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="btn btn-sm btn-outline" id="btn-cuaca-prev" disabled>
+                  <i data-lucide="chevron-left"></i> Sebelumnya
+                </button>
+                <span id="cuaca-page-num" style="font-size: 13px; font-weight: 600; padding: 0 8px; color: var(--text-primary);">Halaman 1 / 1</span>
+                <button class="btn btn-sm btn-outline" id="btn-cuaca-next" disabled>
+                  Selanjutnya <i data-lucide="chevron-right"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -968,6 +983,7 @@
                       <option value="palembang">Palembang (Sumatera Selatan)</option>
                       <option value="jambi">Muaro Jambi (Jambi)</option>
                       <option value="kalteng">Sampit, Kotawaringin Timur (Kalimantan Tengah)</option>
+                      <option value="gps">📍 Auto (Deteksi GPS Device Saya)</option>
                       <option value="custom">Kustom (Koordinat Manual)</option>
                     </select>
                   </div>
@@ -983,7 +999,10 @@
                     <label>Longitude (°)</label>
                     <input type="number" step="0.0001" id="setting-weather-lon" class="form-control" value="102.9902">
                   </div>
-                  <div class="form-group full-width" style="display:flex; justify-content:flex-end;">
+                  <div class="form-group full-width" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <button type="button" class="btn btn-outline" id="btn-detect-gps" style="border-color:var(--primary-green); color:var(--primary-green);">
+                      <i data-lucide="navigation"></i> Deteksi GPS Device Saya
+                    </button>
                     <button type="button" class="btn btn-primary" id="btn-save-weather-location">
                       <i data-lucide="check"></i> Simpan Lokasi Cuaca
                     </button>
