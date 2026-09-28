@@ -927,6 +927,49 @@
               </div>
             </div>
 
+            <!-- Settings Card: Weather Station Location -->
+            <div class="card" style="grid-column: 1 / -1;">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title"><i data-lucide="map-pin" style="color:var(--primary-green); vertical-align:middle;"></i> Lokasi Stasiun Cuaca IoT</h3>
+                  <p class="card-subtitle">Atur koordinat & lokasi perkebunan untuk penarikan telemetry cuaca realtime (Open-Meteo API)</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-grid">
+                  <div class="form-group full-width">
+                    <label>Pilih Preset Lokasi Kebun</label>
+                    <select id="setting-weather-preset" class="form-control">
+                      <option value="musi_rawas">Tegalsari, Kec. Megang Sakti, Kab. Musi Rawas (Sumatera Selatan)</option>
+                      <option value="sei_karang">Kebun Sei Karang, Galang (Sumatera Utara)</option>
+                      <option value="riau">Poros Sawit, Pekanbaru (Riau)</option>
+                      <option value="palembang">Palembang (Sumatera Selatan)</option>
+                      <option value="jambi">Muaro Jambi (Jambi)</option>
+                      <option value="kalteng">Sampit, Kotawaringin Timur (Kalimantan Tengah)</option>
+                      <option value="custom">Kustom (Koordinat Manual)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="grid-column: span 2;">
+                    <label>Nama Lokasi Stasiun</label>
+                    <input type="text" id="setting-weather-name" class="form-control" value="Tegalsari, Megang Sakti, Musi Rawas">
+                  </div>
+                  <div class="form-group">
+                    <label>Latitude (°)</label>
+                    <input type="number" step="0.0001" id="setting-weather-lat" class="form-control" value="-3.1764">
+                  </div>
+                  <div class="form-group">
+                    <label>Longitude (°)</label>
+                    <input type="number" step="0.0001" id="setting-weather-lon" class="form-control" value="102.9902">
+                  </div>
+                  <div class="form-group full-width" style="display:flex; justify-content:flex-end;">
+                    <button type="button" class="btn btn-primary" id="btn-save-weather-location">
+                      <i data-lucide="check"></i> Simpan Lokasi Cuaca
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Cloudflare D1 & Workers Backend Configuration -->
             <div class="card" style="grid-column: 1 / -1;">
               <div class="card-header">

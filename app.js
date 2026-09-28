@@ -122,6 +122,14 @@ const state = {
     { id: 5, tanggal: '2023-09-25', jam: '17:00', suhu: 28, kelembaban: 85, curah: 35, kondisi: 'Hujan Lebat' }
   ],
 
+  // Weather Location Settings
+  weatherLocation: JSON.parse(localStorage.getItem('sawit_weather_location')) || {
+    preset: 'musi_rawas',
+    name: 'Tegalsari, Megang Sakti, Musi Rawas',
+    lat: -3.1764,
+    lon: 102.9902
+  },
+
   // Laporan Panen 2023 Bulanan
   laporan2023: [
     { bulan: 'Januari', blokA: 2200, blokB: 1800, blokC: 1950, blokD: 1600, harga: 2450 },
@@ -182,6 +190,19 @@ async function loadSavedData() {
   const settingInput = document.getElementById('setting-api-url');
   if (settingInput && window.ApiService) {
     settingInput.value = ApiService.getBaseUrl();
+  }
+
+  // Pre-fill Weather Location Settings
+  const wPreset = document.getElementById('setting-weather-preset');
+  const wName = document.getElementById('setting-weather-name');
+  const wLat = document.getElementById('setting-weather-lat');
+  const wLon = document.getElementById('setting-weather-lon');
+
+  if (wPreset && state.weatherLocation) {
+    wPreset.value = state.weatherLocation.preset || 'musi_rawas';
+    if (wName) wName.value = state.weatherLocation.name || 'Tegalsari, Megang Sakti, Musi Rawas';
+    if (wLat) wLat.value = state.weatherLocation.lat ?? -3.1764;
+    if (wLon) wLon.value = state.weatherLocation.lon ?? 102.9902;
   }
 
   // 3. Check connection to Cloudflare D1
@@ -1268,7 +1289,7 @@ function updateWeatherUI(w, timeStr) {
 
     if (dTemp) dTemp.textContent = '- °C';
     if (dStatus) dStatus.textContent = 'Belum Ada Data';
-    if (dTime) dTime.textContent = 'Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas';
+    if (dTime) dTime.textContent = `Stasiun IoT ${(state.weatherLocation && state.weatherLocation.name) ? state.weatherLocation.name : 'Tegalsari, Megang Sakti, Musi Rawas'}`;
     if (dHum) dHum.textContent = '- %';
     if (dRain) dRain.textContent = '- mm';
     if (dWind) dWind.textContent = '- km/h';
@@ -1293,9 +1314,10 @@ function updateWeatherUI(w, timeStr) {
   if (elAngin) elAngin.textContent = `${angin} km/h`;
   if (elAnginSub) elAnginSub.textContent = angin > 12 ? 'Angin Kencang' : 'Tenang & Normal';
 
+  const locName = (state.weatherLocation && state.weatherLocation.name) ? state.weatherLocation.name : 'Tegalsari, Megang Sakti, Musi Rawas';
   if (dTemp) dTemp.textContent = `${suhu}°C`;
   if (dStatus) dStatus.textContent = kondisi;
-  if (dTime) dTime.textContent = 'Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas';
+  if (dTime) dTime.textContent = `Stasiun IoT ${locName}`;
   if (dHum) dHum.textContent = `${kelembaban}%`;
   if (dRain) dRain.textContent = `${curah} mm`;
   if (dWind) dWind.textContent = `${angin} km/h`;
@@ -1380,7 +1402,13 @@ async function syncWeatherData() {
     if (window.lucide) lucide.createIcons();
   }
 
-  showToast('Tarik data telemetry 7 hari terakhir (Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas)...');
+  const loc = state.weatherLocation || {
+    name: 'Tegalsari, Megang Sakti, Musi Rawas',
+    lat: -3.1764,
+    lon: 102.9902
+  };
+
+  showToast(`Tarik data telemetry 7 hari terakhir (Stasiun IoT ${loc.name})...`);
 
   const codeMap = {
     0: 'Cerah',
@@ -1396,8 +1424,8 @@ async function syncWeatherData() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   try {
-    // Open-Meteo 7-day past telemetry (past_days=6 + forecast_days=1 = exactly 7 days from 22 Sep to 28 Sep)
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-3.1764&longitude=102.9902&past_days=6&forecast_days=1&daily=temperature_2m_max,relative_humidity_2m_mean,rain_sum,weather_code,wind_speed_10m_max&timezone=Asia%2FJakarta';
+    // Open-Meteo 7-day past telemetry using configured latitude & longitude
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&past_days=6&forecast_days=1&daily=temperature_2m_max,relative_humidity_2m_mean,rain_sum,weather_code,wind_speed_10m_max&timezone=Asia%2FJakarta`;
     const res = await fetch(url, {
       signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined
     });
@@ -1572,6 +1600,44 @@ function initEventListeners() {
   // Weather Sync & Clear buttons
   document.getElementById('btn-sync-weather')?.addEventListener('click', syncWeatherData);
   document.getElementById('btn-clear-all-cuaca')?.addEventListener('click', clearAllCuaca);
+
+  // Preset Weather Location change handler
+  document.getElementById('setting-weather-preset')?.addEventListener('change', (e) => {
+    const val = e.target.value;
+    const presets = {
+      musi_rawas: { name: 'Tegalsari, Megang Sakti, Musi Rawas', lat: -3.1764, lon: 102.9902 },
+      sei_karang: { name: 'Kebun Sei Karang, Galang', lat: 3.4562, lon: 98.8872 },
+      riau: { name: 'Poros Sawit, Pekanbaru', lat: 0.5071, lon: 101.4478 },
+      palembang: { name: 'Palembang', lat: -2.9909, lon: 104.7565 },
+      jambi: { name: 'Muaro Jambi', lat: -1.6101, lon: 103.6131 },
+      kalteng: { name: 'Sampit, Kotawaringin Timur', lat: -2.5333, lon: 112.9500 }
+    };
+
+    if (presets[val]) {
+      const p = presets[val];
+      const wName = document.getElementById('setting-weather-name');
+      const wLat = document.getElementById('setting-weather-lat');
+      const wLon = document.getElementById('setting-weather-lon');
+
+      if (wName) wName.value = p.name;
+      if (wLat) wLat.value = p.lat;
+      if (wLon) wLon.value = p.lon;
+    }
+  });
+
+  // Save Weather Location handler
+  document.getElementById('btn-save-weather-location')?.addEventListener('click', () => {
+    const preset = document.getElementById('setting-weather-preset')?.value || 'custom';
+    const name = document.getElementById('setting-weather-name')?.value || 'Kustom';
+    const lat = parseFloat(document.getElementById('setting-weather-lat')?.value) || -3.1764;
+    const lon = parseFloat(document.getElementById('setting-weather-lon')?.value) || 102.9902;
+
+    const locData = { preset, name, lat, lon };
+    state.weatherLocation = locData;
+    localStorage.setItem('sawit_weather_location', JSON.stringify(locData));
+
+    showToast(`Lokasi stasiun cuaca berhasil disimpan ke ${name} (${lat}, ${lon})!`, 'success');
+  });
 
   // Refresh Dashboard
   document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
