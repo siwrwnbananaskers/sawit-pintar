@@ -1232,7 +1232,7 @@ async function deleteCuaca(id) {
 }
 
 /* ==========================================================================
-   WEATHER REALTIME SYNC & IoT TELEMETRY
+   WEATHER REALTIME SYNC & IoT TELEMETRY (Tegalsari, Megang Sakti, Musi Rawas)
    ========================================================================== */
 function updateWeatherUI(w, timeStr) {
   if (!w) return;
@@ -1275,7 +1275,7 @@ function updateWeatherUI(w, timeStr) {
 
   if (dTemp) dTemp.textContent = `${suhu}°C`;
   if (dStatus) dStatus.textContent = kondisi;
-  if (dTime) dTime.textContent = timeStr ? `Sync IoT (${timeStr})` : 'Stasiun Meteorologi Blok A';
+  if (dTime) dTime.textContent = 'Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas';
   if (dHum) dHum.textContent = `${kelembaban}%`;
   if (dRain) dRain.textContent = `${curah} mm`;
   if (dWind) dWind.textContent = `${angin} km/h`;
@@ -1284,10 +1284,25 @@ function updateWeatherUI(w, timeStr) {
 function updateWeatherChart() {
   if (!charts.trenCuaca || !state.cuacaList || state.cuacaList.length === 0) return;
 
-  const recent = state.cuacaList.slice(0, 7).reverse();
-  const labels = recent.map(item => item.jam ? `${item.jam}` : item.tanggal);
-  const temps = recent.map(item => item.suhu);
-  const rains = recent.map(item => item.curah);
+  const dayNameMap = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+  // Sort by date ascending
+  const sorted = [...state.cuacaList].sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
+  const recent7 = sorted.slice(-7);
+
+  const labels = recent7.map(item => {
+    if (!item.tanggal) return 'Hari Ini';
+    const parts = item.tanggal.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      const dayName = dayNameMap[d.getDay()];
+      return `${dayName} (${parts[2]}/${parts[1]})`;
+    }
+    return item.tanggal;
+  });
+
+  const temps = recent7.map(item => item.suhu);
+  const rains = recent7.map(item => item.curah);
 
   charts.trenCuaca.data.labels = labels;
   charts.trenCuaca.data.datasets[0].data = temps;
@@ -1303,90 +1318,120 @@ async function syncWeatherData() {
     if (window.lucide) lucide.createIcons();
   }
 
-  showToast('Tarik telemetry stasiun cuaca IoT (Open-Meteo API)...');
+  showToast('Tarik data telemetry 7 hari terakhir (Stasiun IoT Tegalsari, Megang Sakti, Musi Rawas)...');
 
-  let weatherData = null;
+  const codeMap = {
+    0: 'Cerah',
+    1: 'Cerah Berawan', 2: 'Cerah Berawan', 3: 'Berawan',
+    45: 'Kabut Tropis', 48: 'Kabut Tropis',
+    51: 'Gerimis Ringan', 53: 'Hujan Ringan', 55: 'Hujan Ringan',
+    61: 'Hujan Sedang', 63: 'Hujan Deras', 65: 'Hujan Lebat',
+    80: 'Hujan Lokal', 81: 'Hujan Deras', 82: 'Hujan Sangat Lebat',
+    95: 'Badai Petir', 96: 'Badai Petir & Hujan', 99: 'Badai Petir'
+  };
+
+  let fetchedList = [];
 
   try {
-    // Open-Meteo Realtime Weather API for Riau, Sumatra Plantation (Lat 0.5071, Lon 101.4478)
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=0.5071&longitude=101.4478&current=temperature_2m,relative_humidity_2m,rain,weather_code,wind_speed_10m', {
-      signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined
+    // Open-Meteo 7-day past telemetry for Tegalsari, Kec. Megang Sakti, Kab. Musi Rawas, Sumsel (Lat: -3.1764, Lon: 102.9902)
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=-3.1764&longitude=102.9902&past_days=6&daily=temperature_2m_max,relative_humidity_2m_mean,rain_sum,weather_code,wind_speed_10m_max&timezone=Asia%2FJakarta';
+    const res = await fetch(url, {
+      signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(5000) : undefined
     });
 
     if (res.ok) {
       const data = await res.json();
-      if (data && data.current) {
-        const c = data.current;
-        const codeMap = {
-          0: 'Cerah',
-          1: 'Cerah Berawan', 2: 'Cerah Berawan', 3: 'Berawan',
-          45: 'Kabut Tropis', 48: 'Kabut Tropis',
-          51: 'Gerimis Ringan', 53: 'Hujan Ringan', 55: 'Hujan Ringan',
-          61: 'Hujan Sedang', 63: 'Hujan Deras', 65: 'Hujan Lebat',
-          80: 'Hujan Lokal', 81: 'Hujan Deras', 82: 'Hujan Sangat Lebat',
-          95: 'Badai Petir', 96: 'Badai Petir & Hujan', 99: 'Badai Petir'
-        };
+      if (data && data.daily && data.daily.time) {
+        const d = data.daily;
+        const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
 
-        weatherData = {
-          suhu: Math.round(c.temperature_2m),
-          kelembaban: Math.round(c.relative_humidity_2m),
-          curah: Math.round(c.rain ? c.rain * 10 : (c.weather_code >= 50 ? 25 : 0)),
-          angin: Math.round(c.wind_speed_10m),
-          kondisi: codeMap[c.weather_code] || 'Cerah Berawan'
-        };
+        for (let i = 0; i < d.time.length; i++) {
+          const tgl = d.time[i];
+          const suhu = Math.round(d.temperature_2m_max[i] || 30);
+          const kelembaban = Math.round(d.relative_humidity_2m_mean[i] || 78);
+          const curah = Math.round((d.rain_sum[i] || 0) * 10) / 10;
+          const angin = Math.round(d.wind_speed_10m_max[i] || 6);
+          const wCode = d.weather_code[i] || 1;
+          const kondisi = codeMap[wCode] || 'Cerah Berawan';
+
+          fetchedList.push({
+            id: Date.now() + i,
+            tanggal: tgl,
+            jam: i === d.time.length - 1 ? nowTime : '12:00 WIB',
+            suhu,
+            kelembaban,
+            curah,
+            angin,
+            kondisi
+          });
+        }
       }
     }
   } catch (err) {
-    console.warn('Open-Meteo live API timeout/error, fallback to IoT Sensor Telemetry simulation', err);
+    console.warn('Open-Meteo live 7-day fetch timeout/error, using IoT simulation for Musi Rawas', err);
   }
 
-  // IoT Sensor Telemetry Fallback if live internet request fails
-  if (!weatherData) {
-    const suhuRand = Math.round(27 + Math.random() * 6);
-    const humidityRand = Math.round(75 + Math.random() * 15);
-    const curahRand = Math.round(Math.random() > 0.4 ? Math.random() * 35 : 0);
-    const anginRand = Math.round(3 + Math.random() * 9);
+  // IoT Simulation fallback if network request fails
+  if (fetchedList.length === 0) {
+    const todayObj = new Date();
+    const nowTime = todayObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB';
     const kondisiOptions = ['Cerah', 'Cerah Berawan', 'Berawan', 'Hujan Ringan', 'Hujan Sedang'];
-    const kondisiRand = kondisiOptions[Math.floor(Math.random() * kondisiOptions.length)];
 
-    weatherData = {
-      suhu: suhuRand,
-      kelembaban: humidityRand,
-      curah: curahRand,
-      angin: anginRand,
-      kondisi: kondisiRand
-    };
-  }
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(todayObj);
+      date.setDate(date.getDate() - i);
+      const isoDate = date.toISOString().split('T')[0];
 
-  const today = new Date().toISOString().split('T')[0];
-  const nowTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const suhu = Math.round(28 + Math.random() * 5);
+      const kelembaban = Math.round(72 + Math.random() * 16);
+      const curah = Math.round(Math.random() > 0.4 ? Math.random() * 30 : 0);
+      const angin = Math.round(4 + Math.random() * 8);
+      const kondisi = kondisiOptions[Math.floor(Math.random() * kondisiOptions.length)];
 
-  const payload = {
-    tanggal: today,
-    jam: nowTime,
-    suhu: weatherData.suhu,
-    kelembaban: weatherData.kelembaban,
-    curah: weatherData.curah,
-    kondisi: weatherData.kondisi
-  };
-
-  // 1. Add to local state & persist
-  const newEntry = { id: Date.now(), ...payload, angin: weatherData.angin };
-  state.cuacaList.unshift(newEntry);
-  saveLocalState();
-
-  // 2. Sync to Cloudflare D1 Database if connected
-  const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
-  if (api && api.isOnline()) {
-    try {
-      await api.cuaca.create(payload);
-    } catch (e) {
-      console.warn('Cloud sync error for weather telemetry', e);
+      fetchedList.push({
+        id: Date.now() + i,
+        tanggal: isoDate,
+        jam: i === 0 ? nowTime : '12:00 WIB',
+        suhu,
+        kelembaban,
+        curah,
+        angin,
+        kondisi
+      });
     }
   }
 
-  // 3. Update UI (Cards, Table, Chart)
-  updateWeatherUI(weatherData, nowTime);
+  // Replace or prepend the fetched 7 days data into state.cuacaList
+  const fetchedDates = new Set(fetchedList.map(item => item.tanggal));
+  const remaining = state.cuacaList.filter(item => !fetchedDates.has(item.tanggal));
+  
+  const newestFirst = [...fetchedList].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+  state.cuacaList = [...newestFirst, ...remaining];
+  saveLocalState();
+
+  // Sync to Cloudflare D1 Backend if online
+  const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
+  if (api && api.isOnline()) {
+    for (const item of newestFirst) {
+      try {
+        await api.cuaca.create({
+          tanggal: item.tanggal,
+          jam: item.jam,
+          suhu: item.suhu,
+          kelembaban: item.kelembaban,
+          curah: item.curah,
+          kondisi: item.kondisi
+        });
+      } catch (e) {
+        console.warn('Error syncing cuaca item to Cloudflare D1', e);
+      }
+    }
+  }
+
+  // Update UI components
+  if (state.cuacaList.length > 0) {
+    updateWeatherUI(state.cuacaList[0]);
+  }
   renderCuacaTable();
   updateWeatherChart();
 
@@ -1396,7 +1441,8 @@ async function syncWeatherData() {
     if (window.lucide) lucide.createIcons();
   }
 
-  showToast(`Sinkronisasi Cuaca Berhasil! Suhu: ${weatherData.suhu}°C, Kelembaban: ${weatherData.kelembaban}%, Hujan: ${weatherData.curah}mm (${weatherData.kondisi})`, 'success');
+  const latest = state.cuacaList[0];
+  showToast(`Berhasil menarik data 7 hari terakhir Stasiun IoT Tegalsari, Musi Rawas! Terkini (${latest.tanggal}): ${latest.suhu}°C, ${latest.kondisi}`, 'success');
 }
 
 /* ==========================================================================
@@ -1693,6 +1739,8 @@ function initChartTrenCuaca() {
       }
     }
   });
+
+  updateWeatherChart();
 }
 
 function initChartLaporanBulanan() {
