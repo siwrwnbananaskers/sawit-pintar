@@ -663,11 +663,23 @@
             </div>
           </div>
 
-          <!-- Catatan Cuaca Harian Table (from screenshot bottom left) -->
+          <!-- Catatan Cuaca Harian Table & Rekap Per Bulan/Lokasi -->
           <div class="card table-card mt-4">
-            <div class="card-header">
-              <h3 class="card-title">Catatan Cuaca Harian</h3>
-              <div class="table-actions" style="display:flex; gap:8px;">
+            <div class="card-header" style="flex-wrap:wrap; gap:12px;">
+              <div>
+                <h3 class="card-title">Catatan Cuaca Harian & Rekap Sensor</h3>
+                <p class="card-subtitle">Riwayat akumulasi telemetry stasiun cuaca per bulan & lokasi kebun</p>
+              </div>
+              <div class="table-actions" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <select id="filter-cuaca-bulan" class="form-control" style="width:auto; height:34px; padding:4px 10px; font-size:12px;">
+                  <option value="all">Semua Bulan</option>
+                  <option value="2026-09" selected>September 2026</option>
+                  <option value="2026-08">Agustus 2026</option>
+                  <option value="2026-07">Juli 2026</option>
+                </select>
+                <select id="filter-cuaca-lokasi" class="form-control" style="width:auto; height:34px; padding:4px 10px; font-size:12px;">
+                  <option value="all">Semua Lokasi Stasiun</option>
+                </select>
                 <button class="btn btn-sm btn-outline" id="btn-clear-all-cuaca" style="color:#dc2626; border-color:#fca5a5;">
                   <i data-lucide="trash-2"></i> Hapus Semua Data
                 </button>
@@ -676,12 +688,22 @@
                 </button>
               </div>
             </div>
+
+            <!-- Rekap Ringkasan Bar -->
+            <div id="rekap-cuaca-bar" style="background:#f4faf6; border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color); padding:10px 18px; display:flex; align-items:center; gap:20px; font-size:12.5px; font-weight:600; color:var(--primary-green); flex-wrap:wrap;">
+              <span><i data-lucide="bar-chart-3" style="width:14px; height:14px; vertical-align:middle;"></i> <span id="rekap-text-total">Total Record: 0</span></span>
+              <span><i data-lucide="thermometer" style="width:14px; height:14px; vertical-align:middle;"></i> <span id="rekap-text-suhu">Rerata Suhu: -°C</span></span>
+              <span><i data-lucide="cloud-rain" style="width:14px; height:14px; vertical-align:middle;"></i> <span id="rekap-text-hujan">Total Hujan: - mm</span></span>
+              <span><i data-lucide="droplet" style="width:14px; height:14px; vertical-align:middle;"></i> <span id="rekap-text-kelembaban">Kelembaban: -%</span></span>
+            </div>
+
             <div class="table-responsive">
               <table class="data-table" id="cuaca-table">
                 <thead>
                   <tr>
                     <th>Tanggal</th>
                     <th>Jam</th>
+                    <th>Lokasi Stasiun</th>
                     <th>Suhu</th>
                     <th>Kelembaban</th>
                     <th>Curah Hujan</th>

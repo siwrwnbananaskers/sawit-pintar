@@ -217,17 +217,17 @@ export default {
       // ======================================================================
       if (path === '/api/cuaca') {
         if (method === 'GET') {
-          const { results } = await db.prepare('SELECT * FROM cuaca ORDER BY tanggal DESC, jam DESC LIMIT 30').all();
+          const { results } = await db.prepare('SELECT * FROM cuaca ORDER BY tanggal DESC, jam DESC LIMIT 200').all();
           return jsonResponse({ success: true, data: results }, 200, corsHeaders);
         }
 
         if (method === 'POST') {
           const body = await request.json();
-          const { tanggal, jam, suhu, kelembaban, curah, kondisi } = body;
+          const { tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi } = body;
 
           const res = await db.prepare(
-            'INSERT INTO cuaca (tanggal, jam, suhu, kelembaban, curah, kondisi) VALUES (?, ?, ?, ?, ?, ?)'
-          ).bind(tanggal, jam, suhu, kelembaban, curah, kondisi).run();
+            'INSERT INTO cuaca (tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).bind(tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi || 'Tegalsari, Musi Rawas').run();
 
           return jsonResponse({ success: true, id: res.meta.last_row_id, message: 'Data cuaca berhasil dicatat' }, 201, corsHeaders);
         }

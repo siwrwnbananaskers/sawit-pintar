@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS cuaca (
   kelembaban REAL NOT NULL,
   curah REAL NOT NULL,
   kondisi TEXT NOT NULL,
+  lokasi TEXT DEFAULT 'Tegalsari, Musi Rawas',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 

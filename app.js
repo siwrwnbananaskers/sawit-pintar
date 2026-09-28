@@ -691,15 +691,75 @@ function renderPanenTable(filteredList = state.panenList) {
   if (totalPendapatanEl) totalPendapatanEl.textContent = `Rp ${totalUang.toLocaleString('id-ID')}`;
 }
 
-// 5. Monitoring Cuaca Table
+// 5. Monitoring Cuaca Table & Rekap
 function renderCuacaTable() {
   const tbody = document.getElementById('cuaca-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = state.cuacaList.map(item => `
+  const filterBulan = document.getElementById('filter-cuaca-bulan')?.value || 'all';
+  const filterLokasi = document.getElementById('filter-cuaca-lokasi')?.value || 'all';
+
+  // Populate dynamic location options if dropdown exists
+  const locSelect = document.getElementById('filter-cuaca-lokasi');
+  if (locSelect) {
+    const currentLocVal = locSelect.value;
+    const locations = Array.from(new Set(state.cuacaList.map(item => item.lokasi || 'Tegalsari, Musi Rawas')));
+    locSelect.innerHTML = `<option value="all">Semua Lokasi Stasiun</option>` + 
+      locations.map(loc => `<option value="${loc}">${loc}</option>`).join('');
+    if (locations.includes(currentLocVal)) {
+      locSelect.value = currentLocVal;
+    }
+  }
+
+  // Filter list
+  let filtered = state.cuacaList || [];
+
+  if (filterBulan !== 'all') {
+    filtered = filtered.filter(item => item.tanggal && item.tanggal.startsWith(filterBulan));
+  }
+
+  if (filterLokasi !== 'all') {
+    filtered = filtered.filter(item => (item.lokasi || 'Tegalsari, Musi Rawas') === filterLokasi);
+  }
+
+  // Calculate Rekap Stats
+  const recTotal = document.getElementById('rekap-text-total');
+  const recSuhu = document.getElementById('rekap-text-suhu');
+  const recHujan = document.getElementById('rekap-text-hujan');
+  const recHum = document.getElementById('rekap-text-kelembaban');
+
+  if (filtered.length > 0) {
+    const avgSuhu = (filtered.reduce((acc, curr) => acc + (curr.suhu || 0), 0) / filtered.length).toFixed(1);
+    const sumHujan = (filtered.reduce((acc, curr) => acc + (curr.curah || 0), 0)).toFixed(1);
+    const avgHum = Math.round(filtered.reduce((acc, curr) => acc + (curr.kelembaban || 0), 0) / filtered.length);
+
+    if (recTotal) recTotal.textContent = `Total Record: ${filtered.length} Hari/Entry`;
+    if (recSuhu) recSuhu.textContent = `Rerata Suhu: ${avgSuhu}°C`;
+    if (recHujan) recHujan.textContent = `Total Hujan: ${sumHujan} mm`;
+    if (recHum) recHum.textContent = `Kelembaban Rerata: ${avgHum}%`;
+  } else {
+    if (recTotal) recTotal.textContent = `Total Record: 0`;
+    if (recSuhu) recSuhu.textContent = `Rerata Suhu: -°C`;
+    if (recHujan) recHujan.textContent = `Total Hujan: - mm`;
+    if (recHum) recHum.textContent = `Kelembaban Rerata: -%`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center text-muted" style="padding: 24px;">
+          Belum ada data cuaca untuk filter ini. Klik <strong>"Sync Stasiun Cuaca"</strong> di atas untuk menarik telemetry.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
     <tr>
       <td><strong>${formatTanggal(item.tanggal)}</strong></td>
       <td>${item.jam ? item.jam.replace(/\s*WIB/gi, '') : '12:00'} WIB</td>
+      <td><span class="badge badge-soft-green" style="font-weight:600;"><i data-lucide="map-pin" style="width:12px; height:12px;"></i> ${item.lokasi || 'Tegalsari, Musi Rawas'}</span></td>
       <td><strong>${item.suhu}°C</strong></td>
       <td>${item.kelembaban}%</td>
       <td>${item.curah} mm</td>
@@ -1455,7 +1515,8 @@ async function syncWeatherData() {
             kelembaban,
             curah,
             angin,
-            kondisi
+            kondisi,
+            lokasi: loc.name
           });
         }
       }
@@ -1489,23 +1550,35 @@ async function syncWeatherData() {
         kelembaban,
         curah,
         angin,
-        kondisi
+        kondisi,
+        lokasi: loc.name
       });
     }
   }
 
-  // Clean up any old future dates (> todayStr) and replace past 7 days
-  const fetchedDates = new Set(fetchedList.map(item => item.tanggal));
-  const remaining = state.cuacaList.filter(item => item.tanggal <= todayStr && !fetchedDates.has(item.tanggal));
-  
-  const newestFirst = [...fetchedList].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
-  state.cuacaList = [...newestFirst, ...remaining];
+  // Preserve existing historical records across syncs (Filter out future dates > todayStr)
+  // Unique record key: tanggal + "_" + lokasi + "_" + jam
+  const existingKeys = new Set(state.cuacaList.map(item => `${item.tanggal}_${item.lokasi || 'Tegalsari, Musi Rawas'}_${item.jam}`));
+
+  const newItemsToPush = [];
+  for (const item of fetchedList) {
+    const key = `${item.tanggal}_${item.lokasi}_${item.jam}`;
+    if (!existingKeys.has(key)) {
+      newItemsToPush.push(item);
+      existingKeys.add(key);
+    }
+  }
+
+  // Merge & sort newest first
+  state.cuacaList = [...newItemsToPush, ...state.cuacaList]
+    .filter(item => item.tanggal <= todayStr)
+    .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   saveLocalState();
 
   // Sync to Cloudflare D1 Backend if online
   const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
   if (api && api.isOnline()) {
-    for (const item of newestFirst) {
+    for (const item of newItemsToPush) {
       try {
         await api.cuaca.create({
           tanggal: item.tanggal,
@@ -1513,7 +1586,8 @@ async function syncWeatherData() {
           suhu: item.suhu,
           kelembaban: item.kelembaban,
           curah: item.curah,
-          kondisi: item.kondisi
+          kondisi: item.kondisi,
+          lokasi: item.lokasi
         });
       } catch (e) {
         console.warn('Error syncing cuaca item to Cloudflare D1', e);
@@ -1600,6 +1674,10 @@ function initEventListeners() {
   // Weather Sync & Clear buttons
   document.getElementById('btn-sync-weather')?.addEventListener('click', syncWeatherData);
   document.getElementById('btn-clear-all-cuaca')?.addEventListener('click', clearAllCuaca);
+
+  // Weather Table Month & Location Filters
+  document.getElementById('filter-cuaca-bulan')?.addEventListener('change', renderCuacaTable);
+  document.getElementById('filter-cuaca-lokasi')?.addEventListener('change', renderCuacaTable);
 
   // Preset Weather Location change handler
   document.getElementById('setting-weather-preset')?.addEventListener('change', (e) => {
