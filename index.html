@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Professional Favicon & Theme -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
+  <meta name="theme-color" content="#163824">
   <!-- Chart.js for interactive analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
@@ -1099,13 +1103,13 @@
                   <div class="form-group full-width">
                     <label>URL Endpoint Cloudflare Worker API</label>
                     <div style="display:flex; gap:10px;">
-                      <input type="url" id="setting-api-url" class="form-control" placeholder="https://sawit-pintar-api.your-subdomain.workers.dev" style="flex:1;">
+                      <input type="url" id="setting-api-url" class="form-control" placeholder="https://sawit-pintar-api.wirawanworkers.workers.dev" style="flex:1;">
                       <button type="button" class="btn btn-primary" id="btn-save-api-url">
                         <i data-lucide="check"></i> Simpan & Uji Koneksi
                       </button>
                     </div>
                     <small class="text-muted" style="font-size:11.5px; margin-top:4px; display:block;">
-                      Kosongkan untuk menggunakan mode standalone (LocalStorage). Setelah men-deploy Cloudflare Worker Anda, masukkan URL API di atas untuk sinkronisasi database cloud realtime.
+                      Sistem telah terhubung otomatis ke Cloudflare Worker & D1 Database (<strong>https://sawit-pintar-api.wirawanworkers.workers.dev</strong>). Seluruh data disinkronkan secara real-time antar device.
                     </small>
                   </div>
                 </div>

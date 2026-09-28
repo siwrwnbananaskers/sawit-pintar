@@ -10,14 +10,22 @@ const ApiService = (() => {
   // Key for storing custom Cloudflare Worker API endpoint
   const CONFIG_KEY = 'sawit_api_base_url';
 
-  // Default API URL (dapat diisi URL Cloudflare Worker Anda, misal: https://sawit-pintar-api.your-subdomain.workers.dev)
-  let baseUrl = localStorage.getItem(CONFIG_KEY) || '';
+  // Primary Default Cloudflare Worker & D1 Database Endpoint (Auto-connect to production database)
+  const DEFAULT_API_URL = 'https://sawit-pintar-api.wirawanworkers.workers.dev';
+
+  // Auto-connect: jika belum diset atau kosong, gunakan worker default
+  let stored = localStorage.getItem(CONFIG_KEY);
+  let baseUrl = (stored && stored.trim() !== '') ? stored.trim() : DEFAULT_API_URL;
+  baseUrl = baseUrl.replace(/\/$/, '');
+
+  // Simpan ke localStorage agar konsisten
+  localStorage.setItem(CONFIG_KEY, baseUrl);
 
   // Status tracker
   let isConnectedToCloud = false;
 
   function setBaseUrl(url) {
-    baseUrl = url.trim().replace(/\/$/, '');
+    baseUrl = (url && url.trim() !== '') ? url.trim().replace(/\/$/, '') : DEFAULT_API_URL;
     localStorage.setItem(CONFIG_KEY, baseUrl);
     return checkConnection();
   }
