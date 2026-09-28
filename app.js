@@ -347,6 +347,15 @@ function renderUserProfile() {
    NAVIGATION & VIEW SWITCHING
    ========================================================================== */
 function initNavigation() {
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const backdrop = document.getElementById('sidebar-backdrop');
+
+  const closeMobileSidebar = () => {
+    sidebar?.classList.remove('open');
+    backdrop?.classList.remove('active');
+  };
+
   const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -354,18 +363,23 @@ function initNavigation() {
       const viewId = item.getAttribute('data-view');
       if (viewId) {
         switchView(viewId);
+        // Automatically close sidebar drawer on mobile after selecting a menu
+        if (window.innerWidth <= 820) {
+          closeMobileSidebar();
+        }
       }
     });
   });
 
-  // Mobile sidebar toggle
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  const sidebar = document.getElementById('sidebar');
+  // Mobile sidebar toggle & backdrop click
   if (sidebarToggle && sidebar) {
     sidebarToggle.addEventListener('click', () => {
       sidebar.classList.toggle('open');
+      backdrop?.classList.toggle('active', sidebar.classList.contains('open'));
     });
   }
+
+  backdrop?.addEventListener('click', closeMobileSidebar);
 
   // Profile click opens/navigates directly to Manajemen Pekerja and edits Estate Manager
   const openEstateManagerEdit = () => {

@@ -1753,8 +1753,12 @@ input:checked + .slider:before {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN
+   RESPONSIVE DESIGN (TABLETS & MODERN TALL SMARTPHONES)
    ========================================================================== */
+.sidebar-backdrop {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1781,19 +1785,435 @@ input:checked + .slider:before {
 
 @media (max-width: 820px) {
   #sidebar-toggle {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
+
+  /* Mobile Backdrop Overlay */
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 25, 18, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sidebar-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Mobile Drawer Sidebar */
   .sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
-    left: -260px;
+    left: -290px;
+    width: 275px;
+    max-width: 84vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000;
+    box-shadow: 12px 0 35px rgba(0, 0, 0, 0.5);
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
   .sidebar.open {
     left: 0;
   }
+
+  .top-header {
+    padding: 0 16px;
+    height: 60px;
+  }
+
+  .content-body {
+    padding: 20px 16px 40px 16px;
+  }
+
   .dashboard-bottom-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   TALL MODERN SMARTPHONES (SAMSUNG, INFINIX, REDMI, REALME, IPHONE, ETC.)
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Header optimizations */
+  .top-header {
+    height: 56px;
+    padding: 0 12px;
+  }
+
+  .header-left {
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .breadcrumbs {
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .estate-tag {
+    display: none; /* Hide to prevent horizontal squeezing on phone screens */
+  }
+
+  .breadcrumb-separator {
+    display: none;
+  }
+
+  .breadcrumbs .current {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-right {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .realtime-clock {
+    display: none; /* Phone already has status bar clock */
+  }
+
+  .header-user-profile .user-meta {
+    display: none; /* Show only avatar icon on phone */
+  }
+
+  .header-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  #btn-notifications {
+    width: 36px;
+    height: 36px;
+  }
+
+  #btn-header-logout {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+
+  /* Content area */
+  .content-body {
+    padding: 14px 10px 48px 10px;
+  }
+
+  /* Page headers */
+  .page-header {
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 20px;
+    letter-spacing: -0.4px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .header-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  /* KPI Grid: 2 columns on tall screens for efficient scanning */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+  }
+
+  .kpi-header {
+    margin-bottom: 8px;
+  }
+
+  .kpi-title {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .kpi-icon-badge {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+
+  .kpi-icon-badge i {
+    width: 16px;
+    height: 16px;
+  }
+
+  .kpi-value {
+    font-size: 19px;
+    margin-bottom: 4px;
+  }
+
+  .kpi-value .unit {
+    font-size: 12px;
+  }
+
+  .kpi-trend {
+    font-size: 10.5px;
+  }
+
+  /* Charts */
+  .charts-grid, .dashboard-charts, .laporan-charts-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .chart-card {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .chart-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .chart-container {
+    height: 220px !important;
+  }
+
+  /* Weather widgets on mobile */
+  .weather-summary-box {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .weather-temp-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .weather-mini-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .mini-stat-item .val {
+    font-size: 12px;
+  }
+
+  .weather-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .weather-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .weather-icon-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .weather-icon-circle i {
+    width: 20px;
+    height: 20px;
+  }
+
+  .weather-metric-value {
+    font-size: 18px;
+  }
+
+  /* Table search & filter bars */
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 14px;
+  }
+
+  .card-header .search-box, 
+  .search-box {
+    width: 100% !important;
+  }
+
+  .filter-group,
+  .table-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .filter-group select,
+  .select-wrapper select {
+    width: 100%;
+  }
+
+  .select-wrapper {
+    width: 100%;
+  }
+
+  .card-body {
+    padding: 14px;
+  }
+
+  /* Tables: smooth horizontal scrolling on touch */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    min-width: 580px;
+  }
+
+  .table-responsive table th,
+  .table-responsive table td {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  /* Forms & Settings on phone */
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .toggle-item {
+    padding: 10px 0;
+  }
+
+  .toggle-item p {
+    font-size: 11px;
+  }
+
+  /* Modals on phone: compact & thumb-friendly */
+  .modal-overlay {
+    padding: 10px;
+    align-items: center;
+  }
+
+  .modal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh;
+    max-height: 92dvh;
+    border-radius: 16px;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: 12px 16px;
+  }
+
+  .modal-body {
+    padding: 14px 16px;
+    gap: 10px;
+    max-height: calc(92vh - 120px);
+    max-height: calc(92dvh - 120px);
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-footer {
+    padding: 10px 16px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 11px;
+    font-size: 13.5px;
+  }
+
+  /* Login card on tall phones */
+  .login-screen-overlay {
+    padding: 12px;
+  }
+
+  .login-card-container {
+    width: 100%;
+    max-width: 350px;
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .login-title {
+    font-size: 18px;
+  }
+
+  .login-subtitle {
+    font-size: 11px;
+  }
+}
+
+/* Extra small devices (<= 360px like Galaxy A01/A03, compact phones) */
+@media (max-width: 360px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .weather-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .top-header {
+    padding: 0 8px;
+  }
+  .content-body {
+    padding: 10px 6px 36px 6px;
   }
 }
 
@@ -2430,5 +2850,610 @@ input:checked + .slider:before {
 @keyframes cardGlow {
   0% { opacity: 0.3; }
   100% { opacity: 0.6; }
+}
+
+
+/* ==========================================================================
+   SIDEBAR BACKDROP OVERLAY (Mobile Drawer)
+   ========================================================================== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-backdrop.active {
+  display: block;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   RESPONSIVE: TABLET (≤ 900px)
+   ========================================================================== */
+@media (max-width: 900px) {
+  /* Show hamburger menu button */
+  #sidebar-toggle {
+    display: flex;
+  }
+
+  /* Sidebar becomes a fixed drawer off-screen */
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100vh;
+    z-index: 200;
+    width: 260px;
+    transition: left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+  }
+
+  .sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Main content takes full width */
+  .main-content {
+    width: 100%;
+    height: 100vh;
+  }
+
+  /* Top header: compact */
+  .top-header {
+    padding: 0 16px;
+    height: 56px;
+    gap: 8px;
+  }
+
+  .header-left {
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .breadcrumbs {
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .estate-tag {
+    display: none; /* Hide estate tag on tablet/mobile to save space */
+  }
+
+  .breadcrumb-separator {
+    display: none;
+  }
+
+  #breadcrumb-current-page {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  /* Content padding: slightly compact */
+  .content-body {
+    padding: 20px;
+  }
+
+  /* KPI Grid: 2 columns */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  /* Chart grid: single column */
+  .chart-grid,
+  .two-col-grid,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE: MOBILE (≤ 640px) — Modern Tall Smartphones
+   Samsung Galaxy S24/A55, Infinix, Redmi Note, iPhone 14/15, etc.
+   Viewport: 360px–430px wide, 800px–960px tall (19:9 – 21:9 ratio)
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* ── Layout ────────────────────────────── */
+  html, body {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .app-container {
+    overflow: hidden;
+  }
+
+  .sidebar {
+    width: 280px;
+    left: -285px;
+  }
+
+  /* ── Top Header ───────────────────────── */
+  .top-header {
+    padding: 0 14px;
+    height: 52px;
+  }
+
+  .realtime-clock {
+    display: none; /* Hide clock to save horizontal space */
+  }
+
+  .user-meta {
+    display: none; /* Hide name/role text, keep only avatar */
+  }
+
+  .header-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .notification-dropdown {
+    width: calc(100vw - 28px);
+    right: -10px;
+  }
+
+  /* ── Content Body ─────────────────────── */
+  .content-body {
+    padding: 14px 14px 80px 14px; /* Bottom padding for thumb navigation */
+  }
+
+  /* ── Page Header ─────────────────────── */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 19px;
+    letter-spacing: -0.3px;
+  }
+
+  .page-subtitle {
+    font-size: 12.5px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    font-size: 12px;
+    padding: 8px 12px;
+    min-width: 120px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .search-box.sm {
+    width: 100%;
+  }
+
+  /* ── KPI Cards ────────────────────────── */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 14px 12px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+  }
+
+  /* ── Cards ───────────────────────────── */
+  .card {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 14px;
+  }
+
+  /* ── Charts ──────────────────────────── */
+  .chart-container canvas {
+    max-height: 200px !important;
+  }
+
+  .chart-grid,
+  .two-col-grid,
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* ── Tables ──────────────────────────── */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Wrap all tables in responsive wrapper via CSS if not already done */
+  .card > .table-wrapper,
+  .card > table {
+    overflow-x: auto;
+    display: block;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    font-size: 12px;
+    min-width: 540px;
+  }
+
+  th, td {
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  /* ── Forms ───────────────────────────── */
+  .form-grid,
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-control {
+    font-size: 16px; /* Prevent iOS auto-zoom on input focus */
+    padding: 10px 12px;
+  }
+
+  select.form-control {
+    font-size: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* ── Settings Page ───────────────────── */
+  .settings-grid,
+  .settings-row {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  .settings-card {
+    padding: 16px;
+  }
+
+  /* ── Modals ──────────────────────────── */
+  .modal-overlay {
+    align-items: flex-end; /* Bottom sheet on mobile */
+  }
+
+  .modal-dialog {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    padding: 16px 18px 12px;
+  }
+
+  .modal-body {
+    padding: 16px 18px;
+  }
+
+  .modal-footer {
+    padding: 12px 18px 24px; /* Extra bottom for safe area */
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  /* ── Profile Modal / Popup ───────────── */
+  .profile-popup,
+  .profile-modal {
+    width: 100%;
+    max-width: 100%;
+    bottom: 0;
+    top: auto;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  /* ── Worker/Employee Cards Grid ─────── */
+  .pekerja-grid,
+  .workers-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* ── Avatar Presets in Modal ─────────── */
+  .avatar-presets {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .avatar-preset-item {
+    width: 56px;
+    height: 56px;
+  }
+
+  /* ── Badge / Status Chips ────────────── */
+  .badge {
+    font-size: 10px;
+    padding: 3px 7px;
+  }
+
+  /* ── Button Group ────────────────────── */
+  .btn-group {
+    flex-wrap: wrap;
+  }
+
+  /* ── Pagination ──────────────────────── */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+  }
+
+  .pagination-btn {
+    min-width: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  /* ── Tabs ────────────────────────────── */
+  .tab-bar,
+  .tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  .tab-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn,
+  .tab-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 7px 14px;
+  }
+
+  /* ── Toast Notifications ─────────────── */
+  #toast-container {
+    left: 14px;
+    right: 14px;
+    bottom: 80px;
+    top: auto;
+  }
+
+  .toast {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  /* ── Weather Cards ───────────────────── */
+  .weather-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  /* ── Login Card ──────────────────────── */
+  .login-card-container {
+    width: calc(100vw - 32px);
+    max-width: 400px;
+    padding: 24px 20px;
+    max-height: 96vh;
+    overflow-y: auto;
+  }
+
+  .login-title {
+    font-size: 22px;
+  }
+
+  .login-subtitle {
+    font-size: 12px;
+  }
+
+  .login-orb {
+    display: none; /* Remove floating orbs on mobile for performance */
+  }
+
+  /* ── Dashboard Specific Grids ─────────── */
+  .dashboard-charts,
+  .dashboard-bottom-grid,
+  .charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* ── Summary Stats Grid (Data Lahan) ─── */
+  .summary-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  /* ── KPI Grid Label ──────────────────── */
+  .kpi-label {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  /* ── Sidebar Footer ──────────────────── */
+  .sidebar-footer {
+    padding: 10px 16px 16px;
+    font-size: 11px;
+  }
+}
+
+/* ==========================================================================
+   RESPONSIVE: SMALL MOBILE (≤ 380px)
+   Older/budget devices: Redmi 9, Infinix Hot 10, Samsung A03, etc.
+   ========================================================================== */
+@media (max-width: 380px) {
+  .content-body {
+    padding: 10px 10px 70px 10px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .kpi-card {
+    padding: 10px;
+  }
+
+  .kpi-value {
+    font-size: 20px;
+  }
+
+  .page-title {
+    font-size: 17px;
+  }
+
+  .card {
+    padding: 12px 10px;
+  }
+
+  .btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  #breadcrumb-current-page {
+    font-size: 13px;
+    max-width: 150px;
+  }
+
+  .sidebar {
+    width: 100vw;
+    left: -105vw;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+}
+
+/* ==========================================================================
+   SAFE AREA (iPhone Notch / Android Punch-hole Camera)
+   ========================================================================== */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .top-header {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .modal-footer,
+  .content-body {
+    padding-bottom: max(14px, env(safe-area-inset-bottom));
+  }
+}
+
+/* ==========================================================================
+   TOUCH INTERACTION IMPROVEMENTS
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets for all interactive elements */
+  .btn {
+    min-height: 44px;
+  }
+
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-item {
+    min-height: 44px;
+  }
+
+  .form-control {
+    min-height: 44px;
+  }
+
+  /* Disable hover effects that look weird on touch */
+  .nav-item:hover {
+    background: transparent;
+  }
+
+  .nav-item.active {
+    background-color: var(--bg-sidebar-active) !important;
+  }
+
+  /* Smooth momentum scrolling on iOS */
+  .main-content,
+  .sidebar-nav,
+  .table-responsive,
+  .modal-dialog {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
