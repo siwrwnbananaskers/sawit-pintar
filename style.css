@@ -2348,6 +2348,12 @@ input:checked + .slider:before {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.avatar-upload-actions select.form-control {
+  flex: 1;
+  min-width: 140px;
 }
 
 .btn-upload-avatar {
@@ -2356,7 +2362,7 @@ input:checked + .slider:before {
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  padding: 6px 12px;
+  padding: 7px 12px;
   border-radius: 6px;
   border: 1px solid var(--primary-green);
   background: #ffffff;
@@ -3005,9 +3011,19 @@ input:checked + .slider:before {
     height: 34px;
   }
 
+  /* ── Notification Dropdown on Mobile ─── */
   .notification-dropdown {
-    width: calc(100vw - 28px);
-    right: -10px;
+    position: fixed !important;
+    top: 56px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: calc(100vw - 24px) !important;
+    z-index: 9999 !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border-color) !important;
+    background: #ffffff !important;
   }
 
   /* ── Content Body ─────────────────────── */
@@ -3018,7 +3034,7 @@ input:checked + .slider:before {
   /* ── Page Header ─────────────────────── */
   .page-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     margin-bottom: 16px;
     gap: 12px;
   }
@@ -3034,23 +3050,25 @@ input:checked + .slider:before {
 
   .header-actions {
     width: 100%;
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
   }
 
   .header-actions .btn {
-    flex: 1;
-    font-size: 12px;
-    padding: 8px 12px;
-    min-width: 120px;
+    width: 100%;
+    font-size: 13px;
+    padding: 10px 14px;
+    justify-content: center;
   }
 
   .search-box {
-    width: 100%;
+    width: 100% !important;
+    max-width: 100%;
   }
 
   .search-box.sm {
-    width: 100%;
+    width: 100% !important;
   }
 
   /* ── KPI Cards ────────────────────────── */
@@ -3143,15 +3161,18 @@ input:checked + .slider:before {
 
   .form-group {
     margin-bottom: 12px;
+    grid-column: 1 / -1 !important;
   }
 
   .form-control {
-    font-size: 16px; /* Prevent iOS auto-zoom on input focus */
+    font-size: 15px; /* Prevent iOS auto-zoom on input focus */
     padding: 10px 12px;
+    width: 100%;
   }
 
   select.form-control {
-    font-size: 16px;
+    font-size: 15px;
+    width: 100%;
   }
 
   .form-actions {
@@ -3166,7 +3187,7 @@ input:checked + .slider:before {
     font-size: 14px;
   }
 
-  /* ── Settings Page ───────────────────── */
+  /* ── Settings Page Form & GPS Buttons ── */
   .settings-grid,
   .settings-row {
     grid-template-columns: 1fr !important;
@@ -3177,49 +3198,120 @@ input:checked + .slider:before {
     padding: 16px;
   }
 
-  /* ── Modals ──────────────────────────── */
-  .modal-overlay {
-    align-items: flex-end; /* Bottom sheet on mobile */
+  #btn-detect-gps,
+  #btn-save-weather-location {
+    width: 100% !important;
+    justify-content: center;
+    padding: 11px 14px;
+    font-size: 13px;
   }
 
+  .form-group.full-width[style*="display:flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  /* ── Modals & Bottom Sheets on Mobile ── */
+  .modal-overlay {
+    align-items: flex-end !important; /* Bottom sheet on mobile */
+    padding: 0 !important;
+  }
+
+  .modal-container,
   .modal-dialog {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    max-height: 92vh;
-    overflow-y: auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92vh !important;
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25) !important;
+    animation: modalSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  @keyframes modalSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-container form,
+  .modal-dialog form {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 92vh !important;
+    overflow: hidden !important;
   }
 
   .modal-header {
-    padding: 16px 18px 12px;
+    padding: 16px 20px 12px !important;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
   }
 
   .modal-body {
-    padding: 16px 18px;
+    padding: 16px 20px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex: 1 1 auto !important;
+    max-height: calc(92vh - 140px) !important;
   }
 
   .modal-footer {
-    padding: 12px 18px 24px; /* Extra bottom for safe area */
-    flex-direction: column;
-    gap: 8px;
+    padding: 12px 20px max(18px, env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid var(--border-color);
+    flex-direction: column !important;
+    gap: 10px !important;
+    flex-shrink: 0;
+    background: #ffffff !important;
   }
 
   .modal-footer .btn {
-    width: 100%;
+    width: 100% !important;
     justify-content: center;
     padding: 12px;
     font-size: 14px;
+    order: 1;
   }
 
-  /* ── Profile Modal / Popup ───────────── */
-  .profile-popup,
-  .profile-modal {
+  .modal-footer .btn-primary {
+    order: 0; /* Primary action at the top */
+  }
+
+  /* ── Avatar Edit Box in Modal ────────── */
+  .profile-avatar-edit-box {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 14px 12px;
+    gap: 12px;
+  }
+
+  .avatar-change-control {
     width: 100%;
-    max-width: 100%;
-    bottom: 0;
-    top: auto;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .avatar-change-control label {
+    justify-content: center;
+  }
+
+  .avatar-upload-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .btn-upload-avatar {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 14px;
+    font-size: 13px;
+  }
+
+  .avatar-upload-actions select.form-control {
+    width: 100% !important;
   }
 
   /* ── Worker/Employee Cards Grid ─────── */
