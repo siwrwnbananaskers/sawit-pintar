@@ -2777,6 +2777,16 @@ function renderPembelijList() {
   if (window.lucide) lucide.createIcons();
 }
 
+async function syncPengaturanToCloud() {
+  if (window.ApiService && ApiService.isOnline()) {
+    try {
+      await ApiService.pengaturan.save(state.pengaturan);
+    } catch (err) {
+      console.warn('Gagal sync pengaturan (pembeli) ke Cloudflare D1:', err);
+    }
+  }
+}
+
 async function editPembeli(idx) {
   const daftar = state.pengaturan.daftarPembeli || [];
   const oldNama = daftar[idx];
@@ -2814,6 +2824,8 @@ async function editPembeli(idx) {
   renderPembelijList();
   renderPanenTable();
   updatePanenRingkasan();
+  
+  syncPengaturanToCloud();
 
   if (updatedCount > 0) {
     showToast(`Pembeli diubah menjadi "${trimmed}" (${updatedCount} transaksi panen diperbarui).`, 'success');
@@ -2847,6 +2859,8 @@ async function addPembeli() {
 
   renderPembelijList();
   showToast(`Pembeli "${nama}" berhasil ditambahkan!`, 'success');
+  
+  syncPengaturanToCloud();
 }
 
 async function deletePembeli(idx) {
@@ -2890,6 +2904,8 @@ async function deletePembeli(idx) {
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
   renderPembelijList();
   showToast(`Pembeli "${nama}" telah dihapus dari daftar.`, 'error');
+  
+  syncPengaturanToCloud();
 }
 
 /* ==========================================================================
