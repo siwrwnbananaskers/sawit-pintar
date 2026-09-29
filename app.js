@@ -1408,13 +1408,17 @@ function updatePanenRingkasan() {
     ? (state.panenList.reduce((s, p) => s + (Number(p.harga) || 0), 0) / state.panenList.length)
     : 0;
 
-  // Pembeli utama = yang paling sering muncul di panenList
+  // Pembeli utama = yang paling sering muncul di panenList (mengabaikan grade)
   const pembeliCount = {};
   state.panenList.forEach(p => {
-    if (p.pembeli) pembeliCount[p.pembeli] = (pembeliCount[p.pembeli] || 0) + 1;
+    if (p.pembeli) {
+      // Hilangkan teks "(Grade A)" atau "(Grade B)" dari string pembeli
+      const cleanName = p.pembeli.replace(/\s*\(Grade\s+[A-Z]\)$/i, '').trim();
+      pembeliCount[cleanName] = (pembeliCount[cleanName] || 0) + 1;
+    }
   });
   const topPembeli = Object.entries(pembeliCount).sort((a, b) => b[1] - a[1])[0];
-  const pembeli = topPembeli ? topPembeli[0] : (state.pengaturan.daftarPembeli?.[0] || '-');
+  const pembeli = topPembeli ? topPembeli[0] : (state.pengaturan.daftarPembeli?.[0]?.nama || state.pengaturan.daftarPembeli?.[0] || '-');
 
   if (elPembeli) elPembeli.textContent = pembeli;
   if (elTotal) elTotal.textContent = `${totalKgBulan.toLocaleString('id-ID')} kg`;
