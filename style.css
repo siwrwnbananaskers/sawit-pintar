@@ -513,7 +513,7 @@ body {
   content: '';
   position: absolute;
   top: -6px;
-  right: 18px;
+  right: var(--caret-right, 18px);
   width: 12px;
   height: 12px;
   background: #ffffff;
@@ -3294,7 +3294,7 @@ html.is-authenticated .app-container {
   }
 
   .notification-dropdown::before {
-    right: 112px !important;
+    right: var(--caret-right, 138px) !important;
   }
 
   /* ── Content Body ─────────────────────── */

@@ -458,16 +458,33 @@ function initNavigation() {
   // Notification dropdown toggle
   const notifBtn = document.getElementById('btn-notifications');
   const notifDropdown = document.getElementById('notification-dropdown');
+  const notifOverlay = document.getElementById('notif-overlay');
   if (notifBtn && notifDropdown) {
     notifBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      notifDropdown.classList.toggle('hidden');
-      document.getElementById('notif-overlay')?.classList.toggle('hidden', notifDropdown.classList.contains('hidden'));
+      const willOpen = notifDropdown.classList.contains('hidden');
+      if (willOpen) {
+        notifDropdown.classList.remove('hidden');
+        notifOverlay?.classList.remove('hidden');
+        updateNotifCaretPosition();
+      } else {
+        closeNotificationDropdown();
+      }
     });
+
+    notifOverlay?.addEventListener('click', () => {
+      closeNotificationDropdown();
+    });
+
     document.addEventListener('click', (e) => {
       if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
-        notifDropdown.classList.add('hidden');
-        document.getElementById('notif-overlay')?.classList.add('hidden');
+        closeNotificationDropdown();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (!notifDropdown.classList.contains('hidden')) {
+        updateNotifCaretPosition();
       }
     });
   }
@@ -2465,6 +2482,30 @@ function generateRealtimeNotifications() {
   renderNotifications();
 }
 
+function closeNotificationDropdown() {
+  const notifDropdown = document.getElementById('notification-dropdown');
+  const overlay = document.getElementById('notif-overlay');
+  if (notifDropdown) notifDropdown.classList.add('hidden');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function updateNotifCaretPosition() {
+  const notifBtn = document.getElementById('btn-notifications');
+  const notifDropdown = document.getElementById('notification-dropdown');
+  if (!notifBtn || !notifDropdown) return;
+
+  if (window.innerWidth <= 768) {
+    const btnRect = notifBtn.getBoundingClientRect();
+    const dropdownRect = notifDropdown.getBoundingClientRect();
+    const btnCenter = btnRect.left + (btnRect.width / 2);
+    // Caret width 12px, half-width 6px. Distance from right edge of dropdown
+    const caretRight = Math.round(dropdownRect.right - btnCenter - 6);
+    notifDropdown.style.setProperty('--caret-right', `${caretRight}px`);
+  } else {
+    notifDropdown.style.removeProperty('--caret-right');
+  }
+}
+
 function handleNotifClick(id, page) {
   const readState = JSON.parse(localStorage.getItem('sawit_notif_read_ids') || '[]');
   if (!readState.includes(id)) {
@@ -2473,13 +2514,12 @@ function handleNotifClick(id, page) {
     renderNotifications();
   }
   
+  // Tutup otomatis pop up notifikasi dan overlay blur saat item notif diklik
+  closeNotificationDropdown();
+
   if (page && typeof switchView === 'function') {
     switchView(page);
   }
-  
-  // Close the notification dropdown if it's open
-  const dropdown = document.querySelector('.notification-dropdown');
-  if (dropdown) dropdown.classList.remove('show');
 }
 
 function renderNotifications() {
