@@ -173,17 +173,18 @@ const charts = {};
 
 // Application Entry Point
 document.addEventListener('DOMContentLoaded', async () => {
-  // Clean URL trailing '?' from any previous browser form GET submits
-  if (window.location.search && window.location.search.includes('?')) {
-    try {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch (e) {}
+  // Clean URL trailing '?'
+  if (window.location.search) {
+    try { window.history.replaceState({}, document.title, window.location.pathname); } catch (e) {}
   }
 
   checkAuthSession();
   updateAuthUI();
 
-  await loadSavedData();
+  // 1. Load data lokal DULU — langsung, tidak menunggu jaringan
+  loadLocalData();
+
+  // 2. Init seluruh UI segera dengan data lokal
   renderUserProfile();
   initClock();
   initNavigation();
@@ -192,16 +193,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   initModals();
   initEventListeners();
 
-  if (window.lucide) {
-    lucide.createIcons();
-  }
+  if (window.lucide) lucide.createIcons();
+
+  // 3. Sinkronisasi ke cloud di BACKGROUND — tidak memblokir UI
+  syncCloudData();
 });
 
 /* ==========================================================================
    PERSISTENCE & USER PROFILE SYNCHRONIZATION
    ========================================================================== */
-async function loadSavedData() {
-  // 1. Load LocalStorage first (instant paint)
+// Load data dari localStorage SAJA — cepat, tidak ada network call
+function loadLocalData() {
   try {
     const savedPekerja = localStorage.getItem('sawit_pekerja_list');
     if (savedPekerja) state.pekerjaList = JSON.parse(savedPekerja);
@@ -218,10 +220,10 @@ async function loadSavedData() {
       state.pengaturan = { ...state.pengaturan, ...JSON.parse(savedPengaturan) };
     }
   } catch (err) {
-    console.warn('Local storage load note', err);
+    console.warn('[Local] Storage load error', err);
   }
 
-  // 2. Pre-fill setting API URL input
+  // Pre-fill setting API URL input
   const settingInput = document.getElementById('setting-api-url');
   if (settingInput && window.ApiService) {
     settingInput.value = ApiService.getBaseUrl();
@@ -232,7 +234,6 @@ async function loadSavedData() {
   const wName = document.getElementById('setting-weather-name');
   const wLat = document.getElementById('setting-weather-lat');
   const wLon = document.getElementById('setting-weather-lon');
-
   if (wPreset && state.weatherLocation) {
     wPreset.value = state.weatherLocation.preset || 'musi_rawas';
     if (wName) wName.value = state.weatherLocation.name || 'Tegalsari, Megang Sakti, Musi Rawas';
@@ -240,55 +241,78 @@ async function loadSavedData() {
     if (wLon) wLon.value = state.weatherLocation.lon ?? 102.9902;
   }
 
-  // 3. Check connection to Cloudflare D1
-  if (window.ApiService && ApiService.getBaseUrl()) {
-    const online = await ApiService.checkConnection();
-    updateApiStatusBadge(online);
-
-    if (online) {
-      showToast('Terhubung ke database Cloudflare D1!', 'success');
-      try {
-        const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca, dbPengaturan] = await Promise.all([
-          ApiService.lahan.get(),
-          ApiService.pekerja.get(),
-          ApiService.kegiatan.get(),
-          ApiService.panen.get(),
-          ApiService.cuaca.get(),
-          ApiService.pengaturan.get()
-        ]);
-
-        if (dbLahan && dbLahan.length > 0) state.lahanList = dbLahan;
-        if (dbPekerja && dbPekerja.length > 0) state.pekerjaList = dbPekerja;
-        if (dbKegiatan && dbKegiatan.length > 0) state.kegiatanList = dbKegiatan;
-        if (dbPanen && dbPanen.length > 0) state.panenList = dbPanen;
-        if (dbCuaca && dbCuaca.length > 0) state.cuacaList = dbCuaca;
-        if (dbPengaturan) {
-          state.pengaturan = {
-            ...state.pengaturan,
-            ...dbPengaturan,
-            notif_cuaca: !!dbPengaturan.notif_cuaca,
-            notif_pupuk: !!dbPengaturan.notif_pupuk,
-            notif_iot: !!dbPengaturan.notif_iot
-          };
-          localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
-        }
-      } catch (err) {
-        console.warn('Cloud sync error, staying on local', err);
-      }
-    }
-  } else {
-    updateApiStatusBadge(false);
-  }
-
-  // Render initial settings and weather
   renderSettingsUI();
-
   if (state.cuacaList && state.cuacaList.length > 0) {
     updateWeatherUI(state.cuacaList[0]);
   } else {
     updateWeatherUI(null);
   }
+  // Status badge: offline sampai cloud confirm
+  updateApiStatusBadge(false);
 }
+
+// Sinkronisasi ke Cloudflare D1 di background — tidak memblokir UI
+async function syncCloudData() {
+  if (!window.ApiService || !ApiService.getBaseUrl()) {
+    updateApiStatusBadge(false);
+    return;
+  }
+
+  try {
+    const online = await ApiService.checkConnection();
+    updateApiStatusBadge(online);
+
+    if (!online) return;
+
+    showToast('Terhubung ke database Cloudflare D1!', 'success');
+
+    const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca, dbPengaturan] = await Promise.all([
+      ApiService.lahan.get(),
+      ApiService.pekerja.get(),
+      ApiService.kegiatan.get(),
+      ApiService.panen.get(),
+      ApiService.cuaca.get(),
+      ApiService.pengaturan.get()
+    ]);
+
+    let updated = false;
+    if (dbLahan && dbLahan.length > 0) { state.lahanList = dbLahan; updated = true; }
+    if (dbPekerja && dbPekerja.length > 0) { state.pekerjaList = dbPekerja; updated = true; }
+    if (dbKegiatan && dbKegiatan.length > 0) { state.kegiatanList = dbKegiatan; updated = true; }
+    if (dbPanen && dbPanen.length > 0) { state.panenList = dbPanen; updated = true; }
+    if (dbCuaca && dbCuaca.length > 0) {
+      state.cuacaList = dbCuaca;
+      updateWeatherUI(dbCuaca[0]);
+      updated = true;
+    }
+    if (dbPengaturan) {
+      state.pengaturan = {
+        ...state.pengaturan,
+        ...dbPengaturan,
+        notif_cuaca: !!dbPengaturan.notif_cuaca,
+        notif_pupuk: !!dbPengaturan.notif_pupuk,
+        notif_iot: !!dbPengaturan.notif_iot
+      };
+      localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+      renderSettingsUI();
+    }
+
+    // Refresh UI dengan data cloud jika ada update
+    if (updated) {
+      renderUserProfile();
+      initTables();
+      initCharts();
+      if (window.lucide) lucide.createIcons();
+    }
+  } catch (err) {
+    console.warn('[Cloud] Sync error, tetap pakai data lokal', err);
+    updateApiStatusBadge(false);
+  }
+}
+
+// Backward-compat alias
+async function loadSavedData() { loadLocalData(); }
+
 
 function updateApiStatusBadge(isOnline) {
   const badge = document.getElementById('badge-api-status');
