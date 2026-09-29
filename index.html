@@ -1319,41 +1319,34 @@
               </select>
             </div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Jumlah Hasil (kg) <span class="required">*</span></label>
-              <input type="number" id="panen-jumlah" class="form-control" placeholder="kg" required oninput="calculateTotalPanen()">
-            </div>
-            <div class="form-group">
-              <label>Harga Satuan (Rp/kg) <span class="required">*</span></label>
-              <input type="number" id="panen-harga" class="form-control" value="2500" required oninput="calculateTotalPanen()">
-            </div>
-          </div>
           <div class="form-group">
-            <label>Estimasi Total Pendapatan</label>
-            <input type="text" id="panen-total" class="form-control" readonly value="Rp 0">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Perusahaan Pembeli <span class="required">*</span></label>
-              <select id="panen-pembeli" class="form-control" required onchange="handlePembeliSelectChange()">
-                <!-- Diisi otomatis dari daftar pembeli di Pengaturan -->
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Grade TBS</label>
-              <select id="panen-grade" class="form-control" onchange="handlePembeliSelectChange()">
-                <option value="A">Grade A</option>
-                <option value="B">Grade B</option>
-                <option value="C">Lainnya / Grade C</option>
-              </select>
-            </div>
+            <label>Perusahaan Pembeli <span class="required">*</span></label>
+            <select id="panen-pembeli" class="form-control" required onchange="handlePembeliSelectChange()">
+              <!-- Diisi otomatis dari daftar pembeli di Pengaturan -->
+            </select>
           </div>
           <!-- Input custom jika pilih "Lainnya" -->
           <div class="form-group" id="panen-pembeli-custom-group" style="display:none;">
             <label>Nama Pembeli (Kustom) <span class="required">*</span></label>
             <input type="text" id="panen-pembeli-custom" class="form-control" placeholder="Contoh: PT Palma Sejahtera">
             <small class="text-muted" style="font-size:11px; margin-top:4px; display:block;">Anda bisa tambahkan pembeli ini ke daftar permanen di halaman Pengaturan.</small>
+          </div>
+
+          <div class="form-row" style="margin-top: 15px;">
+            <div class="form-group">
+              <label>Jumlah Grade A (kg)</label>
+              <input type="number" id="panen-jumlah-a" class="form-control" placeholder="0" oninput="calculateTotalPanen()">
+              <small id="panen-harga-a-text" class="text-muted" style="display:block; margin-top:4px; font-size:12px; font-weight:600; color:var(--primary-green);">Rp 0/kg</small>
+            </div>
+            <div class="form-group">
+              <label>Jumlah Grade B (kg)</label>
+              <input type="number" id="panen-jumlah-b" class="form-control" placeholder="0" oninput="calculateTotalPanen()">
+              <small id="panen-harga-b-text" class="text-muted" style="display:block; margin-top:4px; font-size:12px; font-weight:600; color:var(--primary-green);">Rp 0/kg</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Total Estimasi Pendapatan</label>
+            <input type="text" id="panen-total" class="form-control" readonly value="Rp 0">
           </div>
         </div>
         <div class="modal-footer">

@@ -1631,8 +1631,8 @@ function populatePembelijSelect() {
 
 function handlePembeliSelectChange() {
   const sel = document.getElementById('panen-pembeli');
-  const gradeSel = document.getElementById('panen-grade');
-  const hargaInput = document.getElementById('panen-harga');
+  const hargaAText = document.getElementById('panen-harga-a-text');
+  const hargaBText = document.getElementById('panen-harga-b-text');
   const customGroup = document.getElementById('panen-pembeli-custom-group');
   const customInput = document.getElementById('panen-pembeli-custom');
   
@@ -1641,22 +1641,22 @@ function handlePembeliSelectChange() {
   if (sel.value === '__custom__') {
     if (customGroup) customGroup.style.display = '';
     if (customInput) customInput.required = true;
+    if (hargaAText) hargaAText.textContent = 'Harga default: Rp 2600/kg';
+    if (hargaBText) hargaBText.textContent = 'Harga default: Rp 2400/kg';
   } else {
     if (customGroup) customGroup.style.display = 'none';
     if (customInput) { customInput.required = false; customInput.value = ''; }
     
     // Auto-fill price based on Grade
     const selectedOption = sel.options[sel.selectedIndex];
-    if (selectedOption && gradeSel && hargaInput) {
-      const grade = gradeSel.value;
-      if (grade === 'A') {
-        hargaInput.value = selectedOption.getAttribute('data-grade-a') || 2600;
-      } else if (grade === 'B') {
-        hargaInput.value = selectedOption.getAttribute('data-grade-b') || 2400;
-      }
-      if (typeof calculateTotalPanen === 'function') calculateTotalPanen();
+    if (selectedOption && hargaAText && hargaBText) {
+      const priceA = selectedOption.getAttribute('data-grade-a') || 2600;
+      const priceB = selectedOption.getAttribute('data-grade-b') || 2400;
+      hargaAText.textContent = `Harga: Rp ${priceA}/kg`;
+      hargaBText.textContent = `Harga: Rp ${priceB}/kg`;
     }
   }
+  if (typeof calculateTotalPanen === 'function') calculateTotalPanen();
 }
 
 function closeModal(id) {
@@ -1998,24 +1998,43 @@ async function deleteKegiatan(id) {
 
 // --- PANEN CRUD (WITH CLOUDFLARE SYNC) ---
 function calculateTotalPanen() {
-  const jumlah = parseFloat(document.getElementById('panen-jumlah').value) || 0;
-  const harga = parseFloat(document.getElementById('panen-harga').value) || 0;
-  const total = jumlah * harga;
-  document.getElementById('panen-total').value = `Rp ${total.toLocaleString('id-ID')}`;
+  const sel = document.getElementById('panen-pembeli');
+  let priceA = 2600, priceB = 2400;
+
+  if (sel && sel.value !== '__custom__') {
+    const selectedOption = sel.options[sel.selectedIndex];
+    if (selectedOption) {
+      priceA = parseFloat(selectedOption.getAttribute('data-grade-a')) || 2600;
+      priceB = parseFloat(selectedOption.getAttribute('data-grade-b')) || 2400;
+    }
+  }
+
+  const jumlahA = parseFloat(document.getElementById('panen-jumlah-a').value) || 0;
+  const jumlahB = parseFloat(document.getElementById('panen-jumlah-b').value) || 0;
+  
+  const total = (jumlahA * priceA) + (jumlahB * priceB);
+  const el = document.getElementById('panen-total');
+  if (el) el.value = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
 async function handleSavePanen(e) {
   e.preventDefault();
   const tanggal = document.getElementById('panen-tanggal').value;
   const blok = document.getElementById('panen-blok').value;
-  const jumlah = parseFloat(document.getElementById('panen-jumlah').value);
-  const harga = parseFloat(document.getElementById('panen-harga').value);
+  
+  const jumlahA = parseFloat(document.getElementById('panen-jumlah-a').value) || 0;
+  const jumlahB = parseFloat(document.getElementById('panen-jumlah-b').value) || 0;
+  
+  if (jumlahA <= 0 && jumlahB <= 0) {
+    showToast('Masukkan jumlah hasil panen minimal di salah satu Grade!', 'error');
+    return;
+  }
 
   // Ambil nilai pembeli dari select atau input custom
   const pembelijSelect = document.getElementById('panen-pembeli');
   let pembeli = pembelijSelect ? pembelijSelect.value : '';
 
-  // Jika user pilih "+ Lainnya (ketik manual)..."
+  let priceA = 2600, priceB = 2400;
   if (pembeli === '__custom__') {
     const customInput = document.getElementById('panen-pembeli-custom');
     pembeli = customInput ? customInput.value.trim() : '';
@@ -2023,16 +2042,45 @@ async function handleSavePanen(e) {
       showToast('Nama pembeli tidak boleh kosong!', 'error');
       return;
     }
+  } else {
+    const selectedOption = pembelijSelect.options[pembelijSelect.selectedIndex];
+    if (selectedOption) {
+      priceA = parseFloat(selectedOption.getAttribute('data-grade-a')) || 2600;
+      priceB = parseFloat(selectedOption.getAttribute('data-grade-b')) || 2400;
+    }
   }
 
-  const payload = { tanggal, blok, jumlah, harga, pembeli, status: 'Selesai' };
-  const newPanen = { id: Date.now(), ...payload };
-
-  state.panenList.unshift(newPanen);
-
-  if (window.ApiService && ApiService.isOnline()) {
-    ApiService.panen.create(payload);
+  const addedPanens = [];
+  if (jumlahA > 0) {
+    addedPanens.push({ 
+      id: Date.now() + 1, 
+      tanggal, 
+      blok, 
+      jumlah: jumlahA, 
+      harga: priceA, 
+      pembeli: `${pembeli} (Grade A)`, 
+      status: 'Selesai' 
+    });
   }
+  if (jumlahB > 0) {
+    addedPanens.push({ 
+      id: Date.now() + 2, 
+      tanggal, 
+      blok, 
+      jumlah: jumlahB, 
+      harga: priceB, 
+      pembeli: `${pembeli} (Grade B)`, 
+      status: 'Selesai' 
+    });
+  }
+
+  // Save all
+  addedPanens.forEach(p => {
+    state.panenList.unshift(p);
+    if (window.ApiService && ApiService.isOnline()) {
+      ApiService.panen.create(p);
+    }
+  });
 
   saveLocalState();
   renderPanenTable();
@@ -2043,6 +2091,12 @@ async function handleSavePanen(e) {
   updateKPIs();
   generateRealtimeNotifications();
   closeModal('modal-panen');
+  
+  // reset form
+  if (document.getElementById('panen-jumlah-a')) document.getElementById('panen-jumlah-a').value = '';
+  if (document.getElementById('panen-jumlah-b')) document.getElementById('panen-jumlah-b').value = '';
+  if (document.getElementById('panen-total')) document.getElementById('panen-total').value = 'Rp 0';
+  
   showToast('Data panen berhasil disimpan');
 }
 
