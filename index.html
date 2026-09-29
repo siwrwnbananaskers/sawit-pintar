@@ -543,10 +543,7 @@
               <div class="select-wrapper">
                 <select id="filter-kegiatan-blok">
                   <option value="all">Semua Blok</option>
-                  <option value="Blok A">Blok A</option>
-                  <option value="Blok B">Blok B</option>
-                  <option value="Blok C">Blok C</option>
-                  <option value="Blok D">Blok D</option>
+                  <!-- Diisi dinamis oleh JS dari daftar lahan user -->
                 </select>
               </div>
               <button class="btn btn-primary" id="btn-tambah-kegiatan">
@@ -1258,8 +1255,10 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Petugas / Penanggung Jawab</label>
-              <input type="text" id="kegiatan-petugas" class="form-control" placeholder="Contoh: Mandor Sutrisno" required>
+              <label>Petugas / Penanggung Jawab <span class="required">*</span></label>
+              <select id="kegiatan-petugas" class="form-control" required>
+                <!-- Diisi otomatis dari Daftar Pekerja/Karyawan Kebun -->
+              </select>
             </div>
           </div>
         </div>

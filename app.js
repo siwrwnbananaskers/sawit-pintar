@@ -520,6 +520,7 @@ function initTables() {
   renderPekerjaTable();
   renderDashboardActivities();
   renderPembelijList();
+  renderKegiatanBlokFilter();
   updateKPIs();
 }
 
@@ -1534,11 +1535,48 @@ function openModal(id) {
     if (id === 'modal-panen' || id === 'modal-kegiatan') {
       populatePanenAndKegiatanBlokOptions();
     }
+    if (id === 'modal-kegiatan') {
+      populatePetugasDropdown();
+    }
     if (id === 'modal-panen') {
       populatePembelijSelect();
     }
     modal.classList.remove('hidden');
   }
+}
+
+// Populate dropdown petugas/penanggung jawab dari Daftar Pekerja/Karyawan Kebun
+function populatePetugasDropdown(selectedPetugas = '') {
+  const select = document.getElementById('kegiatan-petugas');
+  if (!select) return;
+
+  const workers = state.pekerjaList.length > 0 ? state.pekerjaList : [];
+  if (workers.length === 0) {
+    select.innerHTML = '<option value="">-- Belum ada karyawan terdaftar --</option>';
+    return;
+  }
+
+  const options = workers.map(p => 
+    `<option value="${p.nama}" ${p.nama === selectedPetugas ? 'selected' : ''}>${p.nama} (${p.posisi})</option>`
+  );
+  select.innerHTML = options.join('');
+}
+
+// Render dynamic block filter options in Catatan Kegiatan view
+function renderKegiatanBlokFilter() {
+  const select = document.getElementById('filter-kegiatan-blok');
+  if (!select) return;
+
+  const curVal = select.value || 'all';
+  const options = ['<option value="all">Semua Blok</option>'];
+
+  if (state.lahanList && state.lahanList.length > 0) {
+    state.lahanList.forEach(l => {
+      options.push(`<option value="${l.nama}" ${l.nama === curVal ? 'selected' : ''}>${l.nama}</option>`);
+    });
+  }
+
+  select.innerHTML = options.join('');
 }
 
 // Populate dropdown pembeli di form tambah panen
@@ -1659,6 +1697,7 @@ async function handleSaveLahan(e) {
   renderLahanTable();
   renderPekerjaTable();
   renderLaporanTable();
+  renderKegiatanBlokFilter();
   updateDashboardBlokChart();
   updateKPIs();
   closeModal('modal-lahan');
