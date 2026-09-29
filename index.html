@@ -32,7 +32,7 @@
       <div class="login-card-header">
         <div class="login-brand-badge">
           <div class="logo-icon large">
-            <i data-lucide="sprout"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#ffffff;"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-13"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>
           </div>
         </div>
         <h2 class="login-title">Sawit Pintar</h2>
@@ -42,7 +42,7 @@
         </span>
       </div>
 
-      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="login-form">
+      <form id="form-login" action="javascript:void(0);" onsubmit="event.preventDefault(); handleLoginSubmit(event); return false;" class="login-form">
         <div id="login-error-alert" class="login-alert hidden">
           <i data-lucide="alert-triangle"></i>
           <span id="login-error-msg">Username atau Password salah!</span>
@@ -50,13 +50,13 @@
 
         <div class="form-group">
           <label for="login-username">Username</label>
-          <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus>
+          <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus onkeydown="if(event.key==='Enter'){event.preventDefault();handleLoginSubmit(event);}">
         </div>
 
         <div class="form-group">
           <label for="login-password">Password</label>
           <div class="password-input-wrapper">
-            <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
+            <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();handleLoginSubmit(event);}">
             <button type="button" class="btn-toggle-password" id="btn-toggle-password" title="Tampilkan/Sembunyikan Password">
               <i data-lucide="eye" id="icon-toggle-password"></i>
             </button>
@@ -70,7 +70,7 @@
           </label>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit">
+        <button type="button" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit" onclick="handleLoginSubmit(event)">
           <i data-lucide="log-in"></i> Masuk
         </button>
       </form>

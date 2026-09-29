@@ -173,6 +173,13 @@ const charts = {};
 
 // Application Entry Point
 document.addEventListener('DOMContentLoaded', async () => {
+  // Clean URL trailing '?' from any previous browser form GET submits
+  if (window.location.search && window.location.search.includes('?')) {
+    try {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (e) {}
+  }
+
   checkAuthSession();
   updateAuthUI();
 
@@ -2756,6 +2763,9 @@ function updateAuthUI() {
   if (state.isAuthenticated) {
     if (loginOverlay) {
       loginOverlay.style.setProperty('display', 'none', 'important');
+      loginOverlay.style.setProperty('visibility', 'hidden', 'important');
+      loginOverlay.style.setProperty('opacity', '0', 'important');
+      loginOverlay.style.setProperty('pointer-events', 'none', 'important');
       loginOverlay.classList.add('overlay-hidden');
     }
     if (appContainer) {
@@ -2766,6 +2776,9 @@ function updateAuthUI() {
   } else {
     if (loginOverlay) {
       loginOverlay.style.removeProperty('display');
+      loginOverlay.style.removeProperty('visibility');
+      loginOverlay.style.removeProperty('opacity');
+      loginOverlay.style.removeProperty('pointer-events');
       loginOverlay.classList.remove('overlay-hidden');
     }
     if (appContainer) {
