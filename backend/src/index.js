@@ -271,15 +271,28 @@ export default {
               harga_tbs: 2500,
               notif_cuaca: 1,
               notif_pupuk: 1,
-              notif_iot: 1
+              notif_iot: 1,
+              daftarPembeli: ['PT Sawit Jaya']
             };
+          } else {
+            if (settings.daftar_pembeli) {
+              try {
+                settings.daftarPembeli = JSON.parse(settings.daftar_pembeli);
+              } catch (e) {
+                settings.daftarPembeli = ['PT Sawit Jaya'];
+              }
+            } else {
+              settings.daftarPembeli = ['PT Sawit Jaya'];
+            }
           }
           return jsonResponse({ success: true, data: settings }, 200, corsHeaders);
         }
 
         if (method === 'POST' || method === 'PUT') {
           const body = await request.json();
-          const { nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot } = body;
+          const { nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot, daftarPembeli } = body;
+
+          const daftarPembeliStr = JSON.stringify(daftarPembeli || ['PT Sawit Jaya']);
 
           // Ensure table exists just in case migration was not run yet
           await db.prepare(`
@@ -297,9 +310,16 @@ export default {
             )
           `).run();
 
+          // Auto-heal missing column
+          try {
+            await db.prepare('ALTER TABLE pengaturan ADD COLUMN daftar_pembeli TEXT DEFAULT \'["PT Sawit Jaya"]\'').run();
+          } catch (e) {
+            // Ignore if column already exists
+          }
+
           await db.prepare(`
-            INSERT INTO pengaturan (id, nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot, updated_at)
-            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO pengaturan (id, nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot, daftar_pembeli, updated_at)
+            VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(id) DO UPDATE SET
               nama_kebun = excluded.nama_kebun,
               perusahaan = excluded.perusahaan,
@@ -309,6 +329,7 @@ export default {
               notif_cuaca = excluded.notif_cuaca,
               notif_pupuk = excluded.notif_pupuk,
               notif_iot = excluded.notif_iot,
+              daftar_pembeli = excluded.daftar_pembeli,
               updated_at = CURRENT_TIMESTAMP
           `).bind(
             nama_kebun || 'Kebun Sawit Sei Karang',
@@ -318,7 +339,8 @@ export default {
             harga_tbs || 2500,
             notif_cuaca ? 1 : 0,
             notif_pupuk ? 1 : 0,
-            notif_iot ? 1 : 0
+            notif_iot ? 1 : 0,
+            daftarPembeliStr
           ).run();
 
           return jsonResponse({ success: true, message: 'Pengaturan sistem berhasil disimpan ke Database Cloudflare D1' }, 200, corsHeaders);
