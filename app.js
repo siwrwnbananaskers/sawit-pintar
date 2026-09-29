@@ -403,6 +403,12 @@ function renderUserProfile() {
   if (sidebarName) sidebarName.textContent = em.nama;
   if (sidebarRole) sidebarRole.textContent = em.posisi;
   if (sidebarAvatarImg) sidebarAvatarImg.src = em.avatar || AVATAR_PRESETS.preset1;
+
+  // Update Dynamic Footer in Login Screen
+  const loginFooterCompany = document.getElementById('login-footer-company');
+  if (loginFooterCompany) {
+    loginFooterCompany.textContent = state.profile.perusahaan || 'Sawit Pintar';
+  }
 }
 
 /* ==========================================================================
