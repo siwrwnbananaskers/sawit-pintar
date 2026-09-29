@@ -18,7 +18,19 @@ const AVATAR_PRESETS = {
   preset4: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80'
 };
 
-// Global Application State
+// Default minimum employee required by system for Profile synchronization
+const DEFAULT_ESTATE_MANAGER = {
+  id: 'PK-01',
+  nama: 'Rian Pratama, S.P.',
+  posisi: 'Estate Manager',
+  email: 'rian.pratama@sawitlestari.co.id',
+  telp: '0812-3456-7890',
+  blok: 'Semua Blok',
+  status: 'Tetap',
+  avatar: AVATAR_PRESETS.preset4
+};
+
+// Global Application State (Zero dummy data, clean slate)
 const state = {
   activeView: 'dashboard',
 
@@ -30,105 +42,20 @@ const state = {
     plainPasswordBackup: '130399'
   },
 
-  // Manajemen Pekerja (All profiles, including Estate Manager)
-  pekerjaList: [
-    {
-      id: 'PK-01',
-      nama: 'Wirawan, S.Kom',
-      posisi: 'Estate Manager',
-      blok: 'Semua Blok',
-      telp: '0812-3456-7890',
-      email: 'wirawan@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset1,
-      status: 'Tetap'
-    },
-    {
-      id: 'PK-02',
-      nama: 'Joko Widodo',
-      posisi: 'Mandor Lapangan',
-      blok: 'Blok A - Mandiri',
-      telp: '0813-8822-1100',
-      email: 'joko.widodo@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset2,
-      status: 'Tetap'
-    },
-    {
-      id: 'PK-03',
-      nama: 'Sutrisno',
-      posisi: 'Mandor Lapangan',
-      blok: 'Blok B - Makmur',
-      telp: '0821-4433-2211',
-      email: 'sutrisno@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset3,
-      status: 'Tetap'
-    },
-    {
-      id: 'PK-04',
-      nama: 'Budi Santoso',
-      posisi: 'Mandor Lapangan',
-      blok: 'Blok C - Sejahtera',
-      telp: '0852-9988-7766',
-      email: 'budi.santoso@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset2,
-      status: 'Tetap'
-    },
-    {
-      id: 'PK-05',
-      nama: 'Hasan Basri',
-      posisi: 'Mandor Panen',
-      blok: 'Blok D - Sentosa',
-      telp: '0813-5566-7788',
-      email: 'hasan.basri@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset3,
-      status: 'Tetap'
-    },
-    {
-      id: 'PK-06',
-      nama: 'Dedi Kurniawan',
-      posisi: 'Operator Sensor & Traktor',
-      blok: 'Divisi 1 & 2',
-      telp: '0878-1122-3344',
-      email: 'dedi.kurniawan@sawitlestari.com',
-      avatar: AVATAR_PRESETS.preset4,
-      status: 'Kontrak'
-    }
-  ],
+  // Manajemen Pekerja: hanya data default minimum (Estate Manager pertama)
+  pekerjaList: [{ ...DEFAULT_ESTATE_MANAGER }],
 
-  // Data Lahan (with direct relation to Mandor in pekerjaList)
-  lahanList: [
-    { id: 1, nama: 'Blok A - Mandiri', lokasi: 'Divisi 1 Utara', luas: 45, pohon: 2250, varietas: 'Marihat (8 Thn)', mandor: 'Joko Widodo', status: 'Produktif' },
-    { id: 2, nama: 'Blok B - Makmur', lokasi: 'Divisi 1 Selatan', luas: 40, pohon: 2000, varietas: 'Tenera (6 Thn)', mandor: 'Sutrisno', status: 'Produktif' },
-    { id: 3, nama: 'Blok C - Sejahtera', lokasi: 'Divisi 2 Barat', luas: 48, pohon: 2400, varietas: 'Dumpy (5 Thn)', mandor: 'Budi Santoso', status: 'Produktif' },
-    { id: 4, nama: 'Blok D - Sentosa', lokasi: 'Divisi 2 Timur', luas: 35, pohon: 1750, varietas: 'Socfin (7 Thn)', mandor: 'Hasan Basri', status: 'Produktif' }
-  ],
+  // Data Lahan (kosong, diisi langsung oleh user)
+  lahanList: [],
 
-  // Catatan Kegiatan Agronomi
-  kegiatanList: [
-    { id: 1, tanggal: '2023-09-24', blok: 'Blok A - Mandiri', jenis: 'Pemupukan', deskripsi: 'Pupuk NPK 1kg/pohon', kondisi: 'Sangat Baik', petugas: 'Joko Widodo' },
-    { id: 2, tanggal: '2023-09-20', blok: 'Blok B - Makmur', jenis: 'Pemangkasan', deskripsi: 'Pemangkasan pelepah kering (pruning)', kondisi: 'Normal', petugas: 'Sutrisno' },
-    { id: 3, tanggal: '2023-09-18', blok: 'Blok C - Sejahtera', jenis: 'Pengendalian Hama', deskripsi: 'Semprot herbisida gulma piringan', kondisi: 'Perlu Perhatian', petugas: 'Budi Santoso' },
-    { id: 4, tanggal: '2023-09-15', blok: 'Blok D - Sentosa', jenis: 'Pemanenan', deskripsi: 'Panen rotasi 12 hari TBS matang', kondisi: 'Sangat Baik', petugas: 'Hasan Basri' },
-    { id: 5, tanggal: '2023-09-10', blok: 'Blok A - Mandiri', jenis: 'Kastrasi', deskripsi: 'Kastrasi bunga jantan & betina muda', kondisi: 'Normal', petugas: 'Joko Widodo' },
-    { id: 6, tanggal: '2023-09-05', blok: 'Blok B - Makmur', jenis: 'Sanitasi Lahan', deskripsi: 'Pembersihan parit & gawangan mati', kondisi: 'Sangat Baik', petugas: 'Sutrisno' }
-  ],
+  // Catatan Kegiatan Agronomi (kosong, diisi langsung oleh user)
+  kegiatanList: [],
 
-  // Hasil Panen
-  panenList: [
-    { id: 1, tanggal: '2023-09-23', blok: 'Blok A - Mandiri', jumlah: 2400, harga: 2450, pembeli: 'PT Sawit Jaya', status: 'Selesai' },
-    { id: 2, tanggal: '2023-09-20', blok: 'Blok B - Makmur', jumlah: 2100, harga: 2450, pembeli: 'PT Sawit Jaya', status: 'Selesai' },
-    { id: 3, tanggal: '2023-09-16', blok: 'Blok C - Sejahtera', jumlah: 1900, harga: 2500, pembeli: 'CV Berkah Sawit', status: 'Selesai' },
-    { id: 4, tanggal: '2023-09-12', blok: 'Blok D - Sentosa', jumlah: 2500, harga: 2450, pembeli: 'PT Sawit Jaya', status: 'Selesai' },
-    { id: 5, tanggal: '2023-09-08', blok: 'Blok A - Mandiri', jumlah: 2300, harga: 2400, pembeli: 'PT Agro Lestari', status: 'Selesai' }
-  ],
+  // Hasil Panen (kosong, diisi langsung oleh user)
+  panenList: [],
 
-  // Monitoring Cuaca
-  cuacaList: [
-    { id: 1, tanggal: '2023-09-27', jam: '12:00', suhu: 31, kelembaban: 81, curah: 45, kondisi: 'Hujan Sedang' },
-    { id: 2, tanggal: '2023-09-27', jam: '07:00', suhu: 25, kelembaban: 92, curah: 10, kondisi: 'Cerah Berawan' },
-    { id: 3, tanggal: '2023-09-26', jam: '12:00', suhu: 33, kelembaban: 74, curah: 0, kondisi: 'Panas Terik' },
-    { id: 4, tanggal: '2023-09-26', jam: '07:00', suhu: 26, kelembaban: 88, curah: 0, kondisi: 'Cerah Berawan' },
-    { id: 5, tanggal: '2023-09-25', jam: '17:00', suhu: 28, kelembaban: 85, curah: 35, kondisi: 'Hujan Lebat' }
-  ],
+  // Monitoring Cuaca (kosong, diisi langsung oleh user/IoT sync)
+  cuacaList: [],
 
   // Weather Location Settings
   weatherLocation: JSON.parse(localStorage.getItem('sawit_weather_location')) || {
@@ -156,21 +83,8 @@ const state = {
     notif_iot: true
   },
 
-  // Laporan Panen 2023 Bulanan
-  laporan2023: [
-    { bulan: 'Januari', blokA: 2200, blokB: 1800, blokC: 1950, blokD: 1600, harga: 2450 },
-    { bulan: 'Februari', blokA: 2400, blokB: 1950, blokC: 2100, blokD: 1700, harga: 2450 },
-    { bulan: 'Maret', blokA: 2500, blokB: 2100, blokC: 2250, blokD: 1850, harga: 2450 },
-    { bulan: 'April', blokA: 2600, blokB: 2200, blokC: 2400, blokD: 1900, harga: 2450 },
-    { bulan: 'Mei', blokA: 2750, blokB: 2300, blokC: 2500, blokD: 2050, harga: 2450 },
-    { bulan: 'Juni', blokA: 2800, blokB: 2400, blokC: 2600, blokD: 2100, harga: 2450 },
-    { bulan: 'Juli', blokA: 2650, blokB: 2350, blokC: 2450, blokD: 2000, harga: 2450 },
-    { bulan: 'Agustus', blokA: 2900, blokB: 2500, blokC: 2700, blokD: 2200, harga: 2450 },
-    { bulan: 'September', blokA: 2400, blokB: 2100, blokC: 1900, blokD: 2500, harga: 2450 },
-    { bulan: 'Oktober', blokA: 2850, blokB: 2400, blokC: 2550, blokD: 2150, harga: 2450 },
-    { bulan: 'November', blokA: 2700, blokB: 2250, blokC: 2400, blokD: 2000, harga: 2450 },
-    { bulan: 'Desember', blokA: 2550, blokB: 2150, blokC: 2300, blokD: 1900, harga: 2450 }
-  ]
+  // Tahun laporan panen (dinamis dari catatan panen user)
+  laporanSelectedYear: new Date().getFullYear()
 };
 
 // Chart instances store
@@ -199,10 +113,39 @@ document.addEventListener('DOMContentLoaded', async () => {
    PERSISTENCE & USER PROFILE SYNCHRONIZATION
    ========================================================================== */
 async function loadSavedData() {
+  // Clear legacy mock data once if detected, ensuring clean slate for real user input
+  try {
+    const dummyCleaned = localStorage.getItem('sawit_dummy_cleaned_v3');
+    if (!dummyCleaned) {
+      const savedLahan = localStorage.getItem('sawit_lahan_list');
+      if (savedLahan && savedLahan.includes('Blok A - Mandiri')) {
+        localStorage.removeItem('sawit_lahan_list');
+        localStorage.removeItem('sawit_kegiatan_list');
+        localStorage.removeItem('sawit_panen_list');
+        localStorage.removeItem('sawit_cuaca_list');
+        localStorage.removeItem('sawit_pekerja_list');
+      }
+      localStorage.setItem('sawit_dummy_cleaned_v3', 'true');
+    }
+  } catch (cleanErr) {
+    console.warn('Dummy cleanup note', cleanErr);
+  }
+
   // 1. Load LocalStorage first (instant paint)
   try {
     const savedPekerja = localStorage.getItem('sawit_pekerja_list');
-    if (savedPekerja) state.pekerjaList = JSON.parse(savedPekerja);
+    if (savedPekerja) {
+      const parsed = JSON.parse(savedPekerja);
+      state.pekerjaList = Array.isArray(parsed) && parsed.length > 0 ? parsed : [{ ...DEFAULT_ESTATE_MANAGER }];
+    } else {
+      state.pekerjaList = [{ ...DEFAULT_ESTATE_MANAGER }];
+    }
+
+    // Ensure Estate Manager is always present for system profile synchronization
+    if (!state.pekerjaList.some(p => p.posisi === 'Estate Manager')) {
+      state.pekerjaList.unshift({ ...DEFAULT_ESTATE_MANAGER });
+    }
+
     const savedLahan = localStorage.getItem('sawit_lahan_list');
     if (savedLahan) state.lahanList = JSON.parse(savedLahan);
     const savedKegiatan = localStorage.getItem('sawit_kegiatan_list');
@@ -316,7 +259,7 @@ function saveLocalState() {
 
 // Get the current Estate Manager worker
 function getEstateManager() {
-  return state.pekerjaList.find(p => p.posisi === 'Estate Manager') || state.pekerjaList[0];
+  return state.pekerjaList.find(p => p.posisi === 'Estate Manager') || state.pekerjaList[0] || DEFAULT_ESTATE_MANAGER;
 }
 
 // Automatically sync Header and Sidebar profile with Estate Manager
@@ -495,7 +438,38 @@ function renderLahanTable(filteredList = state.lahanList) {
   if (!tbody) return;
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted" style="padding: 24px;">Tidak ada data lahan yang cocok</td></tr>`;
+    if (state.lahanList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="table-empty-row text-center">
+            <div class="empty-state-card">
+              <div class="empty-state-icon-circle">
+                <i data-lucide="map-pin"></i>
+              </div>
+              <h4 class="empty-state-title">Belum Ada Data Lahan</h4>
+              <p class="empty-state-desc">Inventarisasi blok kebun sawit Anda belum tersedia. Tambahkan blok lahan pertama untuk mulai mencatat luas area, varietas bibit, populasi pohon, dan mandor penanggung jawab.</p>
+              <button class="btn btn-primary empty-state-action" onclick="openModal('modal-lahan')">
+                <i data-lucide="plus-circle"></i> Tambah Lahan Pertama
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="table-empty-row text-center">
+            <div class="empty-state-card" style="padding: 28px 16px;">
+              <i data-lucide="search-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+              <h4 class="empty-state-title" style="font-size:15px;">Tidak Ditemukan Lahan yang Cocok</h4>
+              <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Coba gunakan kata kunci pencarian nama blok atau lokasi yang lain.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    if (window.lucide) lucide.createIcons();
+    updateLahanStats();
     return;
   }
 
@@ -628,7 +602,18 @@ function renderPekerjaTable(filteredList = state.pekerjaList) {
   if (!tbody) return;
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding: 24px;">Tidak ada data pekerja yang cocok</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="table-empty-row text-center">
+          <div class="empty-state-card" style="padding: 28px 16px;">
+            <i data-lucide="user-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+            <h4 class="empty-state-title" style="font-size:15px;">Pekerja Tidak Ditemukan</h4>
+            <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Tidak ada pekerja yang sesuai dengan kata kunci pencarian Anda.</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -678,7 +663,37 @@ function renderKegiatanTable(filteredList = state.kegiatanList) {
   if (!tbody) return;
 
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding: 24px;">Tidak ada catatan kegiatan yang cocok</td></tr>`;
+    if (state.kegiatanList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card">
+              <div class="empty-state-icon-circle">
+                <i data-lucide="clipboard-list"></i>
+              </div>
+              <h4 class="empty-state-title">Belum Ada Catatan Kegiatan Agronomi</h4>
+              <p class="empty-state-desc">Pantau pemupukan, pemangkasan (pruning), pengendalian gulma & hama, serta sanitasi kebun secara berkala di sini.</p>
+              <button class="btn btn-primary empty-state-action" onclick="openModal('modal-kegiatan')">
+                <i data-lucide="plus-circle"></i> Catat Kegiatan Pertama
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card" style="padding: 28px 16px;">
+              <i data-lucide="search-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+              <h4 class="empty-state-title" style="font-size:15px;">Tidak Ada Catatan yang Sesuai</h4>
+              <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Tidak ada aktivitas yang cocok dengan filter blok atau kata kunci yang dipilih.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -708,13 +723,59 @@ function renderKegiatanTable(filteredList = state.kegiatanList) {
   if (window.lucide) lucide.createIcons();
 }
 
+function updateRingkasanPanen() {
+  const totalKg = state.panenList.reduce((acc, curr) => acc + (Number(curr.jumlah) || 0), 0);
+  const totalUang = state.panenList.reduce((acc, curr) => acc + ((Number(curr.jumlah) || 0) * (Number(curr.harga) || 0)), 0);
+  const rataHarga = totalKg > 0 ? Math.round(totalUang / totalKg) : 0;
+
+  const totalPanenEl = document.getElementById('ringkasan-total-panen');
+  const rataHargaEl = document.getElementById('ringkasan-rata-harga');
+  const totalPendapatanEl = document.getElementById('ringkasan-total-pendapatan');
+
+  if (totalPanenEl) totalPanenEl.textContent = `${totalKg.toLocaleString('id-ID')} kg`;
+  if (rataHargaEl) rataHargaEl.textContent = `Rp ${rataHarga.toLocaleString('id-ID')} / kg`;
+  if (totalPendapatanEl) totalPendapatanEl.textContent = `Rp ${totalUang.toLocaleString('id-ID')}`;
+}
+
 // 4. Hasil Panen Table
 function renderPanenTable(filteredList = state.panenList) {
   const tbody = document.getElementById('panen-table-body');
   if (!tbody) return;
 
+  updateRingkasanPanen();
+
   if (filteredList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted" style="padding: 24px;">Tidak ada data panen yang cocok</td></tr>`;
+    if (state.panenList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card">
+              <div class="empty-state-icon-circle">
+                <i data-lucide="archive"></i>
+              </div>
+              <h4 class="empty-state-title">Belum Ada Riwayat Hasil Panen</h4>
+              <p class="empty-state-desc">Catat hasil timbangan panen Tandan Buah Segar (TBS) per rotasi untuk memantau tonase produksi, harga per kg, dan total pendapatan.</p>
+              <button class="btn btn-primary empty-state-action" onclick="openModal('modal-panen')">
+                <i data-lucide="plus-circle"></i> Catat Panen Pertama
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card" style="padding: 28px 16px;">
+              <i data-lucide="search-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+              <h4 class="empty-state-title" style="font-size:15px;">Data Panen Tidak Ditemukan</h4>
+              <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Tidak ada catatan panen yang sesuai dengan pencarian Anda.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -738,18 +799,6 @@ function renderPanenTable(filteredList = state.panenList) {
   }).join('');
 
   if (window.lucide) lucide.createIcons();
-
-  const totalKg = state.panenList.reduce((acc, curr) => acc + curr.jumlah, 0);
-  const totalUang = state.panenList.reduce((acc, curr) => acc + (curr.jumlah * curr.harga), 0);
-  const rataHarga = totalKg > 0 ? Math.round(totalUang / totalKg) : 0;
-
-  const totalPanenEl = document.getElementById('ringkasan-total-panen');
-  const rataHargaEl = document.getElementById('ringkasan-rata-harga');
-  const totalPendapatanEl = document.getElementById('ringkasan-total-pendapatan');
-
-  if (totalPanenEl) totalPanenEl.textContent = `${totalKg.toLocaleString('id-ID')} kg`;
-  if (rataHargaEl) rataHargaEl.textContent = `Rp ${rataHarga.toLocaleString('id-ID')} / kg`;
-  if (totalPendapatanEl) totalPendapatanEl.textContent = `Rp ${totalUang.toLocaleString('id-ID')}`;
 }
 
 // 5. Monitoring Cuaca Table & Rekap
@@ -847,13 +896,37 @@ function renderCuacaTable() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="text-center text-muted" style="padding: 24px;">
-          Belum ada data cuaca untuk filter ini. Klik <strong>"Sync Stasiun Cuaca"</strong> di atas untuk menarik telemetry.
-        </td>
-      </tr>
-    `;
+    if (!state.cuacaList || state.cuacaList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="table-empty-row text-center">
+            <div class="empty-state-card">
+              <div class="empty-state-icon-circle">
+                <i data-lucide="cloud-rain"></i>
+              </div>
+              <h4 class="empty-state-title">Belum Ada Data Log Cuaca</h4>
+              <p class="empty-state-desc">Catat riwayat curah hujan, suhu, dan kelembaban harian secara manual atau sinkronkan data telemetry terkini dari stasiun cuaca IoT.</p>
+              <button class="btn btn-primary empty-state-action" onclick="openModal('modal-cuaca')">
+                <i data-lucide="plus-circle"></i> Tambah Log Cuaca
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="table-empty-row text-center">
+            <div class="empty-state-card" style="padding: 28px 16px;">
+              <i data-lucide="search-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+              <h4 class="empty-state-title" style="font-size:15px;">Data Cuaca Tidak Ditemukan</h4>
+              <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Belum ada log cuaca untuk filter bulan atau stasiun yang dipilih.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -879,34 +952,150 @@ function renderCuacaTable() {
   if (window.lucide) lucide.createIcons();
 }
 
-// 6. Laporan Tahunan Table (2023)
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+function getLaporanBlocks() {
+  const set = new Set();
+  state.lahanList.forEach(l => {
+    if (l.nama) set.add(l.nama.split(' - ')[0].trim());
+  });
+  state.panenList.forEach(p => {
+    if (p.blok) set.add(p.blok.trim());
+  });
+  const list = Array.from(set).filter(Boolean);
+  return list.length > 0 ? list : ['Blok A', 'Blok B', 'Blok C', 'Blok D'];
+}
+
+function updateLaporanYearDropdown() {
+  const select = document.getElementById('select-periode-laporan');
+  if (!select) return;
+
+  const currentYear = new Date().getFullYear();
+  const yearsSet = new Set([currentYear, currentYear - 1, currentYear - 2]);
+  state.panenList.forEach(p => {
+    if (p.tanggal) {
+      const y = new Date(p.tanggal).getFullYear();
+      if (!isNaN(y)) yearsSet.add(y);
+    }
+  });
+
+  const sortedYears = Array.from(yearsSet).sort((a, b) => b - a);
+  const currentVal = state.laporanSelectedYear || currentYear;
+
+  select.innerHTML = sortedYears.map(y => 
+    `<option value="${y}" ${y === currentVal ? 'selected' : ''}>Laporan Bulanan ${y}</option>`
+  ).join('');
+}
+
+// 6. Laporan Panen Tahunan (Dinamis dari Data Panen Real User)
 function renderLaporanTable() {
   const tbody = document.getElementById('laporan-table-body');
   const tfoot = document.getElementById('laporan-table-footer');
+  const thead = document.querySelector('#tabel-laporan-tahunan thead');
+  const title = document.getElementById('title-tabel-laporan');
   if (!tbody) return;
 
-  let sumA = 0, sumB = 0, sumC = 0, sumD = 0, sumTotalKg = 0, sumPendapatan = 0;
+  const selectedYear = state.laporanSelectedYear || new Date().getFullYear();
+  if (title) title.textContent = `Tabel Laporan Panen ${selectedYear}`;
 
-  tbody.innerHTML = state.laporan2023.map(row => {
-    const totalBulan = row.blokA + row.blokB + row.blokC + row.blokD;
-    const pendapatanBulan = totalBulan * row.harga;
+  updateLaporanYearDropdown();
+  const blocks = getLaporanBlocks();
 
-    sumA += row.blokA;
-    sumB += row.blokB;
-    sumC += row.blokC;
-    sumD += row.blokD;
-    sumTotalKg += totalBulan;
-    sumPendapatan += pendapatanBulan;
+  // Dynamic table headers matching actual blocks
+  if (thead) {
+    thead.innerHTML = `
+      <tr>
+        <th>Bulan</th>
+        ${blocks.map(b => `<th>${b} (kg)</th>`).join('')}
+        <th>Total Panen (kg)</th>
+        <th>Pendapatan (Rp)</th>
+      </tr>
+    `;
+  }
+
+  // Filter real panen records for selected year
+  const yearPanen = state.panenList.filter(p => {
+    if (!p.tanggal) return false;
+    const d = new Date(p.tanggal);
+    return d.getFullYear() === selectedYear;
+  });
+
+  if (yearPanen.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="${blocks.length + 3}" class="table-empty-row text-center">
+          <div class="empty-state-card">
+            <div class="empty-state-icon-circle">
+              <i data-lucide="bar-chart-2"></i>
+            </div>
+            <h4 class="empty-state-title">Belum Ada Data Panen Tahun ${selectedYear}</h4>
+            <p class="empty-state-desc">Belum ada catatan panen TBS pada tahun ${selectedYear}. Semua laporan bulanan dan grafik distribusi blok akan dihitung secara dinamis dari catatan panen real.</p>
+            <button class="btn btn-primary empty-state-action" onclick="switchView('hasil-panen'); openModal('modal-panen');">
+              <i data-lucide="plus-circle"></i> Input Catatan Panen
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    if (tfoot) tfoot.innerHTML = '';
+    if (window.lucide) lucide.createIcons();
+    updateLaporanCharts([], blocks);
+    return;
+  }
+
+  // Aggregate panen per month
+  const monthlyData = MONTH_NAMES.map((name, mIdx) => {
+    const records = yearPanen.filter(p => new Date(p.tanggal).getMonth() === mIdx);
+    const blockKg = {};
+    blocks.forEach(b => { blockKg[b] = 0; });
+
+    let totalMonthKg = 0;
+    let totalMonthIncome = 0;
+
+    records.forEach(r => {
+      const kg = Number(r.jumlah) || 0;
+      const price = Number(r.harga) || 0;
+      totalMonthKg += kg;
+      totalMonthIncome += (kg * price);
+
+      const rBlock = (r.blok || '').trim();
+      const match = blocks.find(b => b === rBlock || rBlock.startsWith(b));
+      if (match) {
+        blockKg[match] = (blockKg[match] || 0) + kg;
+      } else if (blocks.length > 0) {
+        blockKg[blocks[0]] = (blockKg[blocks[0]] || 0) + kg;
+      }
+    });
+
+    return {
+      monthName: name,
+      blockKg,
+      totalMonthKg,
+      totalMonthIncome
+    };
+  });
+
+  const totalBlockSum = {};
+  blocks.forEach(b => { totalBlockSum[b] = 0; });
+  let grandTotalKg = 0;
+  let grandTotalIncome = 0;
+
+  tbody.innerHTML = monthlyData.map(row => {
+    blocks.forEach(b => {
+      totalBlockSum[b] += row.blockKg[b] || 0;
+    });
+    grandTotalKg += row.totalMonthKg;
+    grandTotalIncome += row.totalMonthIncome;
 
     return `
       <tr>
-        <td><strong>${row.bulan}</strong></td>
-        <td>${row.blokA.toLocaleString('id-ID')}</td>
-        <td>${row.blokB.toLocaleString('id-ID')}</td>
-        <td>${row.blokC.toLocaleString('id-ID')}</td>
-        <td>${row.blokD.toLocaleString('id-ID')}</td>
-        <td><strong>${totalBulan.toLocaleString('id-ID')}</strong></td>
-        <td><strong class="text-success">Rp ${pendapatanBulan.toLocaleString('id-ID')}</strong></td>
+        <td><strong>${row.monthName}</strong></td>
+        ${blocks.map(b => `<td>${(row.blockKg[b] || 0).toLocaleString('id-ID')}</td>`).join('')}
+        <td><strong>${row.totalMonthKg.toLocaleString('id-ID')}</strong></td>
+        <td><strong class="text-success">Rp ${row.totalMonthIncome.toLocaleString('id-ID')}</strong></td>
       </tr>
     `;
   }).join('');
@@ -915,14 +1104,51 @@ function renderLaporanTable() {
     tfoot.innerHTML = `
       <tr>
         <td>TOTAL TAHUNAN</td>
-        <td>${sumA.toLocaleString('id-ID')} kg</td>
-        <td>${sumB.toLocaleString('id-ID')} kg</td>
-        <td>${sumC.toLocaleString('id-ID')} kg</td>
-        <td>${sumD.toLocaleString('id-ID')} kg</td>
-        <td><strong>${sumTotalKg.toLocaleString('id-ID')} kg</strong></td>
-        <td><strong class="text-success">Rp ${sumPendapatan.toLocaleString('id-ID')}</strong></td>
+        ${blocks.map(b => `<td>${(totalBlockSum[b] || 0).toLocaleString('id-ID')} kg</td>`).join('')}
+        <td><strong>${grandTotalKg.toLocaleString('id-ID')} kg</strong></td>
+        <td><strong class="text-success">Rp ${grandTotalIncome.toLocaleString('id-ID')}</strong></td>
       </tr>
     `;
+  }
+
+  if (window.lucide) lucide.createIcons();
+  updateLaporanCharts(monthlyData, blocks);
+}
+
+function updateLaporanCharts(monthlyData, blocks) {
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  if (charts.laporanBulanan) {
+    charts.laporanBulanan.data.labels = shortMonths;
+    const totalsInTon = (monthlyData && monthlyData.length === 12)
+      ? monthlyData.map(m => +(m.totalMonthKg / 1000).toFixed(2))
+      : new Array(12).fill(0);
+    charts.laporanBulanan.data.datasets[0].data = totalsInTon;
+    charts.laporanBulanan.update();
+  }
+
+  if (charts.distribusiPanen) {
+    if (!monthlyData || monthlyData.length === 0) {
+      charts.distribusiPanen.data.labels = ['Belum Ada Data Panen'];
+      charts.distribusiPanen.data.datasets[0].data = [1];
+      charts.distribusiPanen.data.datasets[0].backgroundColor = ['#e2e8f0'];
+    } else {
+      const blockTotals = blocks.map(b => {
+        return monthlyData.reduce((acc, curr) => acc + (curr.blockKg[b] || 0), 0);
+      });
+      const hasAny = blockTotals.some(v => v > 0);
+      if (!hasAny) {
+        charts.distribusiPanen.data.labels = ['Belum Ada Data Panen'];
+        charts.distribusiPanen.data.datasets[0].data = [1];
+        charts.distribusiPanen.data.datasets[0].backgroundColor = ['#e2e8f0'];
+      } else {
+        const palette = ['#2d6a4f', '#52b788', '#d97706', '#0284c7', '#8b5cf6', '#ec4899', '#14b8a6'];
+        charts.distribusiPanen.data.labels = blocks;
+        charts.distribusiPanen.data.datasets[0].data = blockTotals;
+        charts.distribusiPanen.data.datasets[0].backgroundColor = blocks.map((_, i) => palette[i % palette.length]);
+      }
+    }
+    charts.distribusiPanen.update();
   }
 }
 
@@ -930,6 +1156,23 @@ function renderLaporanTable() {
 function renderDashboardActivities() {
   const listEl = document.getElementById('dashboard-recent-activity');
   if (!listEl) return;
+
+  if (!state.kegiatanList || state.kegiatanList.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state-card" style="padding: 32px 16px;">
+        <div class="empty-state-icon-circle" style="width:52px; height:52px; margin-bottom:12px;">
+          <i data-lucide="clipboard" style="width:24px; height:24px;"></i>
+        </div>
+        <h4 class="empty-state-title" style="font-size:15px;">Belum Ada Aktivitas Terbaru</h4>
+        <p class="empty-state-desc" style="font-size:12.5px; max-width:320px; margin-bottom:14px;">Semua catatan pemupukan, pruning, sanitasi, atau panen akan muncul otomatis di sini.</p>
+        <button class="btn btn-sm btn-primary" onclick="openModal('modal-kegiatan')">
+          <i data-lucide="plus"></i> Catat Aktivitas
+        </button>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
 
   const sampleRecent = state.kegiatanList.slice(0, 4);
   listEl.innerHTML = sampleRecent.map(act => {
@@ -959,14 +1202,55 @@ function renderDashboardActivities() {
 }
 
 function updateKPIs() {
-  const totalLuas = state.lahanList.reduce((acc, curr) => acc + Number(curr.luas), 0);
-  const totalPohon = state.lahanList.reduce((acc, curr) => acc + Number(curr.pohon), 0);
+  const totalLuas = state.lahanList.reduce((acc, curr) => acc + (Number(curr.luas) || 0), 0);
+  const totalPohon = state.lahanList.reduce((acc, curr) => acc + (Number(curr.pohon) || 0), 0);
 
   const kpiLuas = document.getElementById('kpi-luas-lahan');
   const kpiPohon = document.getElementById('kpi-jumlah-pohon');
+  const kpiPanenTerakhir = document.getElementById('kpi-panen-terakhir');
+  const kpiEstimasiPanen = document.getElementById('kpi-estimasi-panen');
+
+  const subLahan = document.getElementById('kpi-sub-lahan');
+  const subPohon = document.getElementById('kpi-sub-pohon');
+  const subPanen = document.getElementById('kpi-sub-panen');
+  const subEstimasi = document.getElementById('kpi-sub-estimasi');
 
   if (kpiLuas) kpiLuas.innerHTML = `${totalLuas} <span class="unit">Ha</span>`;
   if (kpiPohon) kpiPohon.textContent = totalPohon.toLocaleString('id-ID');
+
+  if (subLahan) {
+    subLahan.textContent = state.lahanList.length > 0 
+      ? `${state.lahanList.length} Blok Terdaftar` 
+      : 'Belum Ada Lahan';
+  }
+
+  if (subPohon) {
+    const density = totalLuas > 0 ? Math.round(totalPohon / totalLuas) : 0;
+    subPohon.textContent = `${density} Pohon / Ha`;
+  }
+
+  if (kpiPanenTerakhir) {
+    if (state.panenList.length > 0) {
+      const sorted = [...state.panenList].sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
+      const latest = sorted[0];
+      const tonVal = ((Number(latest.jumlah) || 0) / 1000).toFixed(1);
+      kpiPanenTerakhir.innerHTML = `${tonVal} <span class="unit">Ton</span>`;
+      if (subPanen) subPanen.textContent = `${latest.blok} (${formatTanggal(latest.tanggal)})`;
+    } else {
+      kpiPanenTerakhir.innerHTML = `0 <span class="unit">Ton</span>`;
+      if (subPanen) subPanen.textContent = 'Belum Ada Transaksi';
+    }
+  }
+
+  if (kpiEstimasiPanen) {
+    const curYear = new Date().getFullYear();
+    const curYearKg = state.panenList
+      .filter(p => p.tanggal && new Date(p.tanggal).getFullYear() === curYear)
+      .reduce((sum, p) => sum + (Number(p.jumlah) || 0), 0);
+    const tonVal = (curYearKg / 1000).toFixed(1);
+    kpiEstimasiPanen.innerHTML = `${tonVal} <span class="unit">Ton</span>`;
+    if (subEstimasi) subEstimasi.textContent = `Tahun ${curYear}`;
+  }
 }
 
 /* ==========================================================================
@@ -1078,9 +1362,35 @@ function initModals() {
   });
 }
 
+function populatePanenAndKegiatanBlokOptions() {
+  const panenSelect = document.getElementById('panen-blok');
+  const kegiatanSelect = document.getElementById('kegiatan-blok');
+
+  const blocks = state.lahanList.length > 0 
+    ? state.lahanList.map(l => l.nama.split(' - ')[0]) 
+    : ['Blok A', 'Blok B', 'Blok C', 'Blok D'];
+
+  if (panenSelect && panenSelect.children.length !== blocks.length) {
+    const curVal = panenSelect.value;
+    panenSelect.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join('');
+    if (blocks.includes(curVal)) panenSelect.value = curVal;
+  }
+
+  if (kegiatanSelect && kegiatanSelect.children.length !== blocks.length) {
+    const curVal = kegiatanSelect.value;
+    kegiatanSelect.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join('');
+    if (blocks.includes(curVal)) kegiatanSelect.value = curVal;
+  }
+}
+
 function openModal(id) {
   const modal = document.getElementById(id);
-  if (modal) modal.classList.remove('hidden');
+  if (modal) {
+    if (id === 'modal-panen' || id === 'modal-kegiatan') {
+      populatePanenAndKegiatanBlokOptions();
+    }
+    modal.classList.remove('hidden');
+  }
 }
 
 function closeModal(id) {
@@ -1154,6 +1464,8 @@ async function handleSaveLahan(e) {
   saveLocalState();
   renderLahanTable();
   renderPekerjaTable();
+  renderLaporanTable();
+  updateDashboardBlokChart();
   updateKPIs();
   closeModal('modal-lahan');
 }
@@ -1201,6 +1513,8 @@ async function deleteLahan(id) {
     saveLocalState();
     renderLahanTable();
     renderPekerjaTable();
+    renderLaporanTable();
+    updateDashboardBlokChart();
     updateKPIs();
     showToast(`Lahan ${lahan.nama} berhasil dihapus`, 'error');
   }
@@ -1425,13 +1739,18 @@ async function handleSavePanen(e) {
 
   saveLocalState();
   renderPanenTable();
+  renderLaporanTable();
+  updateDashboardProduksiChart();
+  updateDashboardBlokChart();
+  updatePanenBulananChart();
+  updateKPIs();
   closeModal('modal-panen');
   showToast('Data panen berhasil disimpan');
 }
 
 async function deletePanen(id) {
   const item = state.panenList.find(x => x.id === id);
-  const detail = item ? `catatan panen blok ${item.blok} (${item.jumlahTon} Ton)` : 'catatan panen ini';
+  const detail = item ? `catatan panen blok ${item.blok} (${item.jumlah} kg)` : 'catatan panen ini';
 
   const confirmed = await showConfirmDialog({
     title: 'Hapus Catatan Panen?',
@@ -1451,6 +1770,11 @@ async function deletePanen(id) {
 
     saveLocalState();
     renderPanenTable();
+    renderLaporanTable();
+    updateDashboardProduksiChart();
+    updateDashboardBlokChart();
+    updatePanenBulananChart();
+    updateKPIs();
     showToast('Catatan panen telah dihapus', 'error');
   }
 }
@@ -2171,11 +2495,11 @@ function initEventListeners() {
     }
   });
 
-  // Laporan Period Select Change
+  // Laporan Period Select Change (Dynamic Year Filtering)
   document.getElementById('select-periode-laporan')?.addEventListener('change', (e) => {
-    const title = document.getElementById('title-tabel-laporan');
-    if (title) title.textContent = `Tabel Laporan Panen ${e.target.value}`;
-    showToast(`Memuat data laporan tahun ${e.target.value}`);
+    state.laporanSelectedYear = parseInt(e.target.value) || new Date().getFullYear();
+    renderLaporanTable();
+    showToast(`Memuat data laporan tahun ${state.laporanSelectedYear}`);
   });
 
   // Logout Handlers (Sidebar & Header)
@@ -2200,7 +2524,7 @@ function initEventListeners() {
 }
 
 /* ==========================================================================
-   CHARTS INITIALIZATION (CHART.JS)
+   CHARTS INITIALIZATION (CHART.JS) - 100% DINAMIS DARI DATA USER
    ========================================================================== */
 function initCharts() {
   Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
@@ -2212,6 +2536,60 @@ function initCharts() {
   initChartTrenCuaca();
   initChartLaporanBulanan();
   initChartDistribusiPanen();
+
+  // Populate dynamic chart values from real state data
+  updateDashboardProduksiChart();
+  updateDashboardBlokChart();
+  updatePanenBulananChart();
+}
+
+function updateDashboardProduksiChart() {
+  if (!charts.produksiBulanan) return;
+  const curYear = new Date().getFullYear();
+  const monthsData = new Array(12).fill(0);
+  state.panenList.forEach(p => {
+    if (!p.tanggal) return;
+    const d = new Date(p.tanggal);
+    if (d.getFullYear() === curYear) {
+      const m = d.getMonth();
+      if (m >= 0 && m < 12) {
+        monthsData[m] += (Number(p.jumlah) || 0) / 1000;
+      }
+    }
+  });
+  charts.produksiBulanan.data.datasets[0].data = monthsData.map(v => +v.toFixed(2));
+  charts.produksiBulanan.update();
+}
+
+function updateDashboardBlokChart() {
+  if (!charts.produksiBlok) return;
+  const blocks = getLaporanBlocks();
+  const blockTotals = blocks.map(b => {
+    return state.panenList
+      .filter(p => p.blok === b || (p.blok && p.blok.startsWith(b)))
+      .reduce((sum, p) => sum + ((Number(p.jumlah) || 0) / 1000), 0);
+  });
+  charts.produksiBlok.data.labels = blocks;
+  charts.produksiBlok.data.datasets[0].data = blockTotals.map(v => +v.toFixed(2));
+  charts.produksiBlok.update();
+}
+
+function updatePanenBulananChart() {
+  if (!charts.panenBulanan) return;
+  const curYear = new Date().getFullYear();
+  const monthsData = new Array(12).fill(0);
+  state.panenList.forEach(p => {
+    if (!p.tanggal) return;
+    const d = new Date(p.tanggal);
+    if (d.getFullYear() === curYear) {
+      const m = d.getMonth();
+      if (m >= 0 && m < 12) {
+        monthsData[m] += Number(p.jumlah) || 0;
+      }
+    }
+  });
+  charts.panenBulanan.data.datasets[0].data = monthsData;
+  charts.panenBulanan.update();
 }
 
 function initChartProduksiBulanan() {
@@ -2219,7 +2597,6 @@ function initChartProduksiBulanan() {
   if (!ctx) return;
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const dataValues = [14, 16, 18, 17, 21, 23, 22, 26, 22.8, 25.3, 24, 25];
 
   const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 300);
   gradient.addColorStop(0, 'rgba(45, 106, 79, 0.45)');
@@ -2231,7 +2608,7 @@ function initChartProduksiBulanan() {
       labels: months,
       datasets: [{
         label: 'Produksi TBS (Ton)',
-        data: dataValues,
+        data: new Array(12).fill(0),
         borderColor: '#2d6a4f',
         borderWidth: 2.5,
         backgroundColor: gradient,
@@ -2268,11 +2645,11 @@ function initChartProduksiBlok() {
   charts.produksiBlok = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Blok A', 'Blok B', 'Blok C', 'Blok D'],
+      labels: ['Belum Ada Blok'],
       datasets: [{
         label: 'Hasil (Ton)',
-        data: [7.2, 5.8, 6.4, 4.8],
-        backgroundColor: ['#2d6a4f', '#40916c', '#52b788', '#74c69d'],
+        data: [0],
+        backgroundColor: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#8b5cf6', '#ec4899', '#0284c7'],
         borderRadius: 8,
         barPercentage: 0.6
       }]
@@ -2281,7 +2658,12 @@ function initChartProduksiBlok() {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false }
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `Hasil: ${ctx.parsed.y} Ton`
+          }
+        }
       },
       scales: {
         y: { beginAtZero: true, grid: { color: '#f1f5f2' } },
@@ -2295,8 +2677,7 @@ function initChartPanenBulanan() {
   const ctx = document.getElementById('chartPanenBulanan');
   if (!ctx) return;
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep'];
-  const values = [7550, 8150, 8700, 9100, 9600, 9900, 9450, 10300, 8900];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   charts.panenBulanan = new Chart(ctx, {
     type: 'bar',
@@ -2304,7 +2685,7 @@ function initChartPanenBulanan() {
       labels: months,
       datasets: [{
         label: 'Volume Panen (kg)',
-        data: values,
+        data: new Array(12).fill(0),
         backgroundColor: '#2d6a4f',
         borderRadius: 6,
         barPercentage: 0.55
@@ -2342,7 +2723,7 @@ function initChartTrenCuaca() {
       datasets: [
         {
           label: 'Suhu (°C)',
-          data: [30, 31, 29, 32, 33, 30, 31],
+          data: [0, 0, 0, 0, 0, 0, 0],
           borderColor: '#d97706',
           backgroundColor: '#d97706',
           yAxisID: 'yTemp',
@@ -2351,7 +2732,7 @@ function initChartTrenCuaca() {
         },
         {
           label: 'Curah Hujan (mm)',
-          data: [20, 15, 45, 5, 0, 25, 10],
+          data: [0, 0, 0, 0, 0, 0, 0],
           borderColor: '#0284c7',
           backgroundColor: 'rgba(2, 132, 199, 0.15)',
           fill: true,
@@ -2394,8 +2775,7 @@ function initChartLaporanBulanan() {
   const ctx = document.getElementById('chartLaporanBulanan');
   if (!ctx) return;
 
-  const months = state.laporan2023.map(d => d.bulan.substring(0, 3));
-  const totalsInTon = state.laporan2023.map(d => (d.blokA + d.blokB + d.blokC + d.blokD) / 1000);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   charts.laporanBulanan = new Chart(ctx, {
     type: 'bar',
@@ -2403,7 +2783,7 @@ function initChartLaporanBulanan() {
       labels: months,
       datasets: [{
         label: 'Hasil Panen (Ton)',
-        data: totalsInTon,
+        data: new Array(12).fill(0),
         backgroundColor: '#2d6a4f',
         borderRadius: 6,
         barPercentage: 0.6
@@ -2432,18 +2812,13 @@ function initChartDistribusiPanen() {
   const ctx = document.getElementById('chartDistribusiPanen');
   if (!ctx) return;
 
-  const totalA = state.laporan2023.reduce((acc, curr) => acc + curr.blokA, 0);
-  const totalB = state.laporan2023.reduce((acc, curr) => acc + curr.blokB, 0);
-  const totalC = state.laporan2023.reduce((acc, curr) => acc + curr.blokC, 0);
-  const totalD = state.laporan2023.reduce((acc, curr) => acc + curr.blokD, 0);
-
   charts.distribusiPanen = new Chart(ctx, {
     type: 'pie',
     data: {
-      labels: ['Blok A', 'Blok B', 'Blok C', 'Blok D'],
+      labels: ['Belum Ada Data'],
       datasets: [{
-        data: [totalA, totalB, totalC, totalD],
-        backgroundColor: ['#2d6a4f', '#52b788', '#d97706', '#0284c7'],
+        data: [1],
+        backgroundColor: ['#e2e8f0'],
         borderWidth: 2,
         borderColor: '#ffffff'
       }]
@@ -2455,10 +2830,20 @@ function initChartDistribusiPanen() {
         legend: {
           position: 'right',
           labels: { boxWidth: 12, padding: 14 }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.raw === 1 && ctx.label === 'Belum Ada Data' ? '0 kg' : ctx.raw.toLocaleString('id-ID') + ' kg'}`
+          }
         }
       }
     }
   });
+}
+
+function exportLaporanCSV(ext = 'csv') {
+  const year = state.laporanSelectedYear || new Date().getFullYear();
+  exportTableToCSV('tabel-laporan-tahunan', `Laporan_Panen_${year}.${ext}`);
 }
 
 /* ==========================================================================

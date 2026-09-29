@@ -302,10 +302,10 @@
                 </div>
               </div>
               <div class="kpi-body">
-                <div class="kpi-value" id="kpi-luas-lahan">168 <span class="unit">Ha</span></div>
+                <div class="kpi-value" id="kpi-luas-lahan">0 <span class="unit">Ha</span></div>
                 <div class="kpi-trend positive">
-                  <i data-lucide="trending-up"></i>
-                  <span>4 Blok Produktif</span>
+                  <i data-lucide="map"></i>
+                  <span id="kpi-sub-lahan">0 Blok Terdaftar</span>
                 </div>
               </div>
             </div>
@@ -318,10 +318,10 @@
                 </div>
               </div>
               <div class="kpi-body">
-                <div class="kpi-value" id="kpi-jumlah-pohon">8.400</div>
+                <div class="kpi-value" id="kpi-jumlah-pohon">0</div>
                 <div class="kpi-trend positive">
                   <i data-lucide="check-check"></i>
-                  <span>50 Pohon / Ha (Ideal)</span>
+                  <span id="kpi-sub-pohon">0 Pohon / Ha</span>
                 </div>
               </div>
             </div>
@@ -334,10 +334,10 @@
                 </div>
               </div>
               <div class="kpi-body">
-                <div class="kpi-value" id="kpi-panen-terakhir">22.8 <span class="unit">Ton</span></div>
+                <div class="kpi-value" id="kpi-panen-terakhir">0 <span class="unit">Ton</span></div>
                 <div class="kpi-trend positive">
-                  <i data-lucide="arrow-up-right"></i>
-                  <span>+12.4% vs bulan lalu</span>
+                  <i data-lucide="archive"></i>
+                  <span id="kpi-sub-panen">Belum Ada Transaksi</span>
                 </div>
               </div>
             </div>
@@ -350,10 +350,10 @@
                 </div>
               </div>
               <div class="kpi-body">
-                <div class="kpi-value" id="kpi-estimasi-panen">25.3 <span class="unit">Ton</span></div>
+                <div class="kpi-value" id="kpi-estimasi-panen">0 <span class="unit">Ton</span></div>
                 <div class="kpi-trend positive">
                   <i data-lucide="calendar"></i>
-                  <span>Panen Raya Oktober</span>
+                  <span id="kpi-sub-estimasi">Tahun Berjalan</span>
                 </div>
               </div>
             </div>
@@ -851,10 +851,10 @@
                 </select>
               </div>
               <div class="btn-group">
-                <button class="btn btn-outline" title="Export CSV" onclick="exportTableToCSV('tabel-laporan-tahunan', 'Laporan_Panen_2023.csv')">
+                <button class="btn btn-outline" title="Export CSV" onclick="exportLaporanCSV('csv')">
                   <i data-lucide="file-spreadsheet"></i> CSV
                 </button>
-                <button class="btn btn-outline" title="Export Excel" onclick="exportTableToCSV('tabel-laporan-tahunan', 'Laporan_Panen_2023.xls')">
+                <button class="btn btn-outline" title="Export Excel" onclick="exportLaporanCSV('xls')">
                   <i data-lucide="sheet"></i> Excel
                 </button>
                 <button class="btn btn-primary" title="Cetak / PDF" onclick="window.print()">
