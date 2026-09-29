@@ -1355,7 +1355,9 @@ function updateKPIs() {
     if (state.panenList.length > 0) {
       const sorted = [...state.panenList].sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
       const latest = sorted[0];
-      const tonVal = ((Number(latest.jumlah) || 0) / 1000).toFixed(1);
+      const relatedPanens = sorted.filter(p => p.tanggal === latest.tanggal && p.blok === latest.blok);
+      const totalKg = relatedPanens.reduce((sum, p) => sum + (Number(p.jumlah) || 0), 0);
+      const tonVal = (totalKg / 1000).toFixed(1);
       kpiPanenTerakhir.innerHTML = `${tonVal} <span class="unit">Ton</span>`;
       if (subPanen) subPanen.textContent = `${latest.blok} (${formatTanggal(latest.tanggal)})`;
     } else {
