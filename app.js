@@ -2826,15 +2826,15 @@ function renderPembelijList() {
       <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#f9fafb; padding:10px; border-radius:8px;">
         <div style="text-align:center;">
           <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade A</div>
-          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeA)}</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${(Number(item.gradeA) || 0).toLocaleString('id-ID')}</div>
         </div>
         <div style="text-align:center; border-left:1px solid #e5e7eb; border-right:1px solid #e5e7eb;">
           <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade B</div>
-          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeB)}</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${(Number(item.gradeB) || 0).toLocaleString('id-ID')}</div>
         </div>
         <div style="text-align:center;">
           <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade C</div>
-          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeC)}</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${(Number(item.gradeC) || 0).toLocaleString('id-ID')}</div>
         </div>
       </div>
     </div>
