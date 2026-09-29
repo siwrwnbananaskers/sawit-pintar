@@ -183,26 +183,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   checkAuthSession();
   updateAuthUI();
 
-  // 1. Inisialisasi Event Listener & UI penting secara SINKRON (Tidak boleh tertunda oleh network)
-  initEventListeners();
-  initNavigation();
-  initModals();
-  initClock();
+  await loadSavedData();
   renderUserProfile();
+  initClock();
+  initNavigation();
   initTables();
   initCharts();
+  initModals();
+  initEventListeners();
 
   if (window.lucide) {
     lucide.createIcons();
-  }
-
-  // 2. Load data secara non-blocking di background (tidak membekukan tombol login/UI)
-  try {
-    await loadSavedData();
-    renderUserProfile();
-    initTables();
-  } catch (err) {
-    console.warn('[Data Load Non-blocking Note]', err);
   }
 });
 
