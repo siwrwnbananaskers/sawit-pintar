@@ -2168,7 +2168,10 @@ async function handleSaveCuaca(e) {
   const newCuaca = { id: Date.now(), ...payload };
 
   state.cuacaList.unshift(newCuaca);
-
+  state.cuacaList.sort((a, b) => {
+    if (a.tanggal !== b.tanggal) return (b.tanggal || '').localeCompare(a.tanggal || '');
+    return (b.jam || '').localeCompare(a.jam || '');
+  });
   let dbSuccess = false;
   if (window.ApiService) {
     try {
@@ -2651,7 +2654,10 @@ async function syncWeatherData() {
   // Merge & sort newest first
   state.cuacaList = [...newItemsToPush, ...state.cuacaList]
     .filter(item => item.tanggal <= todayStr)
-    .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+    .sort((a, b) => {
+      if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
+      return (b.jam || '').localeCompare(a.jam || '');
+    });
   saveLocalState();
 
   // Sync to Cloudflare D1 Backend if API configured
