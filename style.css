@@ -1359,6 +1359,14 @@ body {
   font-weight: 700;
 }
 
+.ringkasan-item .val.badge-buyer {
+  font-size: 14px;
+  display: inline-block;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
 /* ==========================================================================
    MONITORING CUACA VIEW
    ========================================================================== */
