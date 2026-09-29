@@ -53,11 +53,6 @@
           </div>
         </div>
         <h2 class="login-title">Sawit Pintar</h2>
-        <p class="login-subtitle">Portal Akses Perkebunan Kelapa Sawit (Sistem Privat)</p>
-        <span class="security-badge">
-          <i data-lucide="shield-check"></i> Autentikasi Enkripsi Aman
-        </span>
-      </div>
 
       <form id="form-login" onsubmit="handleLoginSubmit(event)" class="login-form">
         <div id="login-error-alert" class="login-alert hidden">
@@ -66,12 +61,12 @@
         </div>
 
         <div class="form-group">
-          <label for="login-username"><i data-lucide="user"></i> Nama Pengguna (Username)</label>
+          <label for="login-username"><i data-lucide="user"></i> Username</label>
           <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus>
         </div>
 
         <div class="form-group">
-          <label for="login-password"><i data-lucide="lock"></i> Kata Sandi (Password)</label>
+          <label for="login-password"><i data-lucide="lock"></i> Password</label>
           <div class="password-input-wrapper">
             <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
             <button type="button" class="btn-toggle-password" id="btn-toggle-password" title="Tampilkan/Sembunyikan Password">
@@ -83,18 +78,17 @@
         <div class="login-options">
           <label class="remember-me-checkbox">
             <input type="checkbox" id="login-remember" checked>
-            <span>Ingat Sesi Login Saya</span>
+            <span>Ingat Saya</span>
           </label>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit">
-          <i data-lucide="log-in"></i> Masuk Ke Sistem
+          <i data-lucide="log-in"></i> Masuk
         </button>
       </form>
 
       <div class="login-card-footer">
-        <p><i data-lucide="lock" style="width:12px; height:12px;"></i> Hak Cipta &copy; 2026 PT Agro Sawit Lestari Mandiri</p>
-        <small class="text-muted">Akses privat • Sesi expire dalam 24 jam • v2.1</small>
+        <p><i data-lucide="lock" style="width:12px; height:12px;"></i> Hak Cipta &copy; 2026 <span id="login-footer-company">Sawit Pintar</span></p>
       </div>
     </div>
   </div>
@@ -182,7 +176,7 @@
           <li>
             <a href="javascript:void(0)" class="nav-item" id="nav-logout" style="color: #fca5a5;">
               <i data-lucide="log-out"></i>
-              <span>Keluar (Logout)</span>
+              <span>Keluar</span>
             </a>
           </li>
         </ul>
@@ -210,7 +204,7 @@
           <div class="breadcrumbs">
             <span class="estate-tag"><i data-lucide="tree-pine"></i> Kebun Sawit Sei Karang</span>
             <span class="breadcrumb-separator">/</span>
-            <span id="breadcrumb-current-page" class="current">Dashboard Sawit Pintar</span>
+            <span id="breadcrumb-current-page" class="current">Dashboard</span>
           </div>
         </div>
 
@@ -259,7 +253,7 @@
         <section id="view-dashboard" class="page-view active">
           <div class="page-header">
             <div>
-              <h1 class="page-title">Dashboard Sawit Pintar</h1>
+              <h1 class="page-title">Dashboard</h1>
               <p class="page-subtitle">Ringkasan data operasional & performa perkebunan sawit terintegrasi</p>
             </div>
             <div class="header-actions">

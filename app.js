@@ -493,7 +493,7 @@ function switchView(viewId) {
   const breadcrumb = document.getElementById('breadcrumb-current-page');
   if (breadcrumb) {
     const titleMap = {
-      'dashboard': 'Dashboard Sawit Pintar',
+      'dashboard': 'Dashboard',
       'data-lahan': 'Data Lahan',
       'perkembangan': 'Perkembangan Tanaman',
       'hasil-panen': 'Hasil Panen',
