@@ -157,19 +157,3 @@ CREATE TABLE IF NOT EXISTS pengaturan (
 
 INSERT OR IGNORE INTO pengaturan (id, nama_kebun, perusahaan, alamat, target_produksi, harga_tbs, notif_cuaca, notif_pupuk, notif_iot)
 VALUES (1, 'Kebun Sawit Sei Karang', 'PT Agro Sawit Lestari Mandiri', 'Jl. Poros Sawit No. 88, Riau, Sumatera', 300, 2500, 1, 1, 1);
-
--- ============================================================================
--- 8. TABEL PENGGUNA (AUTENTIKASI & AKUN)
--- ============================================================================
-CREATE TABLE IF NOT EXISTS pengguna (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  nama TEXT NOT NULL,
-  role TEXT DEFAULT 'Estate Manager',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT OR IGNORE INTO pengguna (id, username, password, nama, role)
-VALUES (1, 'si_wrwn', '130399', 'Wirawan, S.Kom', 'Estate Manager');
-

@@ -32,31 +32,31 @@
       <div class="login-card-header">
         <div class="login-brand-badge">
           <div class="logo-icon large">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#ffffff;"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-13"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>
+            <i data-lucide="sprout"></i>
           </div>
         </div>
         <h2 class="login-title">Sawit Pintar</h2>
-        <p class="login-subtitle">Sistem Manajemen Perkebunan Privat</p>
+        <p class="login-subtitle">Portal Akses Perkebunan Kelapa Sawit (Sistem Privat)</p>
         <span class="security-badge">
-          <i data-lucide="shield-check"></i> Enkripsi Aman
+          <i data-lucide="shield-check"></i> Autentikasi Enkripsi Aman
         </span>
       </div>
 
-      <form id="form-login" action="javascript:void(0);" onsubmit="event.preventDefault(); handleLoginSubmit(event); return false;" class="login-form">
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" class="login-form">
         <div id="login-error-alert" class="login-alert hidden">
           <i data-lucide="alert-triangle"></i>
           <span id="login-error-msg">Username atau Password salah!</span>
         </div>
 
         <div class="form-group">
-          <label for="login-username">Username</label>
-          <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus onkeydown="if(event.key==='Enter'){event.preventDefault();handleLoginSubmit(event);}">
+          <label for="login-username"><i data-lucide="user"></i> Nama Pengguna (Username)</label>
+          <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username" autofocus>
         </div>
 
         <div class="form-group">
-          <label for="login-password">Password</label>
+          <label for="login-password"><i data-lucide="lock"></i> Kata Sandi (Password)</label>
           <div class="password-input-wrapper">
-            <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();handleLoginSubmit(event);}">
+            <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
             <button type="button" class="btn-toggle-password" id="btn-toggle-password" title="Tampilkan/Sembunyikan Password">
               <i data-lucide="eye" id="icon-toggle-password"></i>
             </button>
@@ -66,129 +66,21 @@
         <div class="login-options">
           <label class="remember-me-checkbox">
             <input type="checkbox" id="login-remember" checked>
-            <span>Ingat Sesi</span>
+            <span>Ingat Sesi Login Saya</span>
           </label>
         </div>
 
-        <button type="button" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit" onclick="handleLoginSubmit(event)">
-          <i data-lucide="log-in"></i> Masuk
+        <button type="submit" class="btn btn-primary btn-block btn-login-submit" id="btn-login-submit">
+          <i data-lucide="log-in"></i> Masuk Ke Sistem
         </button>
       </form>
 
       <div class="login-card-footer">
-        <p>&copy; 2026 PT Agro Sawit Lestari Mandiri</p>
-        <small>Akses privat &bull; v2.1</small>
+        <p><i data-lucide="lock" style="width:12px; height:12px;"></i> Hak Cipta &copy; 2026 PT Agro Sawit Lestari Mandiri</p>
+        <small class="text-muted">Akses privat • Sesi expire dalam 24 jam • v2.1</small>
       </div>
     </div>
   </div>
-
-  <!-- INSTANT LOGIN CONTROLLER (Zero-delay, resilient, works independent of background API) -->
-  <script>
-    (function() {
-      // 1. Restore sesi otomatis jika sebelumnya sudah login
-      var isLogged = localStorage.getItem('sawit_logged_in') === 'true' || sessionStorage.getItem('sawit_logged_in') === 'true';
-      if (isLogged) {
-        var screen = document.getElementById('login-screen');
-        if (screen) {
-          screen.style.setProperty('display', 'none', 'important');
-          screen.classList.add('overlay-hidden');
-        }
-      }
-
-      // 2. Handler Login Langsung
-      window.handleLoginSubmit = function(e) {
-        if (e) {
-          if (typeof e.preventDefault === 'function') e.preventDefault();
-          if (typeof e.stopPropagation === 'function') e.stopPropagation();
-        }
-
-        var uEl = document.getElementById('login-username');
-        var pEl = document.getElementById('login-password');
-        var remEl = document.getElementById('login-remember');
-
-        var username = (uEl ? uEl.value : '').trim().toLowerCase();
-        var password = (pEl ? pEl.value : '').trim();
-
-        var validUsers = ['si_wrwn', 'admin', 'wirawan'];
-        var validPass = ['130399', '130399.', 'admin'];
-
-        var isUserOk = validUsers.indexOf(username) !== -1;
-        var isPassOk = validPass.indexOf(password) !== -1;
-
-        if (isUserOk && isPassOk) {
-          try {
-            if (remEl && remEl.checked) {
-              localStorage.setItem('sawit_logged_in', 'true');
-              localStorage.setItem('sawit_auth_user', username);
-            } else {
-              sessionStorage.setItem('sawit_logged_in', 'true');
-              sessionStorage.setItem('sawit_auth_user', username);
-            }
-          } catch(err) {}
-
-          var errBox = document.getElementById('login-error-alert');
-          if (errBox) errBox.classList.add('hidden');
-
-          var overlay = document.getElementById('login-screen');
-          if (overlay) {
-            overlay.style.setProperty('display', 'none', 'important');
-            overlay.style.setProperty('visibility', 'hidden', 'important');
-            overlay.style.setProperty('opacity', '0', 'important');
-            overlay.style.setProperty('pointer-events', 'none', 'important');
-            overlay.classList.add('overlay-hidden');
-          }
-
-          var app = document.querySelector('.app-container');
-          if (app) {
-            app.style.pointerEvents = 'auto';
-            app.style.opacity = '1';
-            app.style.filter = 'none';
-          }
-
-          if (window.state) {
-            window.state.isAuthenticated = true;
-          }
-
-          if (typeof showToast === 'function') {
-            showToast('Selamat datang kembali, Wirawan, S.Kom!', 'success');
-          }
-        } else {
-          var errAlert = document.getElementById('login-error-alert');
-          var errMsg = document.getElementById('login-error-msg');
-          if (errMsg) errMsg.textContent = 'Username atau Password salah! (Gunakan: si_wrwn / 130399)';
-          if (errAlert) {
-            errAlert.classList.remove('hidden');
-            errAlert.style.animation = 'none';
-            errAlert.offsetHeight;
-            errAlert.style.animation = '';
-          }
-          if (pEl) {
-            pEl.focus();
-            pEl.select();
-          }
-        }
-        return false;
-      };
-
-      // 3. Helper darurat bypass login di console browser
-      window.bypassLogin = function() {
-        try {
-          localStorage.setItem('sawit_logged_in', 'true');
-          sessionStorage.setItem('sawit_logged_in', 'true');
-        } catch(e){}
-        var overlay = document.getElementById('login-screen');
-        if (overlay) {
-          overlay.style.setProperty('display', 'none', 'important');
-          overlay.classList.add('overlay-hidden');
-        }
-        var app = document.querySelector('.app-container');
-        if (app) {
-          app.style.pointerEvents = 'auto';
-          app.style.opacity = '1';
-        }
-      };
-    })();
-  </script>
 
   <div class="app-container">
     <!-- SIDEBAR -->

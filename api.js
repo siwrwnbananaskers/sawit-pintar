@@ -215,20 +215,11 @@ const ApiService = (() => {
     });
   }
 
-  // 8. Auth API
-  async function login(username, password) {
-    return await request('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-  }
-
   return {
     setBaseUrl,
     getBaseUrl,
     checkConnection,
     isOnline: () => isConnectedToCloud,
-    login,
     lahan: { get: getLahan, create: createLahan, update: updateLahan, delete: deleteLahan },
     pekerja: { get: getPekerja, save: savePekerja, delete: deletePekerja },
     kegiatan: { get: getKegiatan, create: createKegiatan, delete: deleteKegiatan },
