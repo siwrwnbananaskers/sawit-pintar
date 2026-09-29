@@ -2390,7 +2390,8 @@ function generateRealtimeNotifications() {
       time: formatTanggal(latestPanen.tanggal) || 'Hari Ini',
       icon: 'check-circle-2',
       color: 'green',
-      page: 'hasil-panen'
+      page: 'hasil-panen',
+      timestamp: latestPanen.id || Date.now()
     });
   }
 
@@ -2405,7 +2406,8 @@ function generateRealtimeNotifications() {
         time: c.jam ? `Jam ${c.jam}` : 'Hari Ini',
         icon: 'cloud-rain',
         color: 'yellow',
-        page: 'monitoring-cuaca'
+        page: 'monitoring-cuaca',
+        timestamp: c.id || Date.now()
       });
     } else {
       notifs.push({
@@ -2415,7 +2417,8 @@ function generateRealtimeNotifications() {
         time: 'Terkoneksi IoT',
         icon: 'cloud-sun',
         color: 'blue',
-        page: 'monitoring-cuaca'
+        page: 'monitoring-cuaca',
+        timestamp: c.id || Date.now()
       });
     }
   }
@@ -2430,7 +2433,8 @@ function generateRealtimeNotifications() {
       time: formatTanggal(k.tanggal) || 'Hari Ini',
       icon: 'calendar',
       color: 'blue',
-      page: 'perkembangan'
+      page: 'perkembangan',
+      timestamp: k.id || Date.now()
     });
   }
 
@@ -2444,9 +2448,13 @@ function generateRealtimeNotifications() {
       time: 'Status Aktif',
       icon: 'map-pin',
       color: 'green',
-      page: 'data-lahan'
+      page: 'data-lahan',
+      timestamp: 0
     });
   }
+
+  // Sort notifications by timestamp descending (newest first)
+  notifs.sort((a, b) => b.timestamp - a.timestamp);
 
   state.notifications = notifs;
   renderNotifications();
