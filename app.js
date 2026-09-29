@@ -1606,17 +1606,27 @@ function renderKegiatanBlokFilter() {
 function populatePembelijSelect() {
   const select = document.getElementById('panen-pembeli');
   if (!select) return;
-  const daftar = (state.pengaturan.daftarPembeli || ['PT Sawit Jaya']);
+  const daftar = (state.pengaturan.daftarPembeli || []);
   const curVal = select.value;
-  select.innerHTML = daftar.map(p =>
-    `<option value="${p}" ${p === curVal ? 'selected' : ''}>${p}</option>`
-  ).join('');
+  select.innerHTML = daftar.map(p => {
+    const nama = p.nama || p;
+    const ga = p.gradeA || state.pengaturan.harga_tbs || 2500;
+    const gb = p.gradeB || state.pengaturan.harga_tbs || 2500;
+    const gc = p.gradeC || state.pengaturan.harga_tbs || 2500;
+    return `<option value="${nama}" data-grade-a="${ga}" data-grade-b="${gb}" data-grade-c="${gc}" ${nama === curVal ? 'selected' : ''}>${nama}</option>`;
+  }).join('');
   // Jika ada custom option "Lainnya" di akhir
   select.innerHTML += `<option value="__custom__">+ Lainnya (ketik manual)...</option>`;
-  if (curVal && !daftar.includes(curVal) && curVal !== '__custom__') {
+  if (curVal && !daftar.some(p => (p.nama || p) === curVal) && curVal !== '__custom__') {
     select.value = curVal;
-  } else {
-    select.value = daftar[0] || '';
+  } else if (daftar.length > 0) {
+    select.value = daftar[0].nama || daftar[0];
+  }
+  
+  // Set initial price if grade is selected
+  const gradeSel = document.getElementById('panen-grade');
+  if (gradeSel) {
+    handleGradeSelectChange(gradeSel);
   }
 }
 
@@ -1630,6 +1640,33 @@ function handlePembeliSelectChange(sel) {
   } else {
     customGroup.style.display = 'none';
     if (customInput) { customInput.required = false; customInput.value = ''; }
+    
+    // Auto-update price when buyer changes
+    const gradeSel = document.getElementById('panen-grade');
+    if (gradeSel) {
+      handleGradeSelectChange(gradeSel);
+    }
+  }
+}
+
+function handleGradeSelectChange(sel) {
+  const pembeliSel = document.getElementById('panen-pembeli');
+  const hargaInput = document.getElementById('panen-harga');
+  if (!pembeliSel || !hargaInput) return;
+  
+  if (pembeliSel.value === '__custom__') return;
+  
+  const selectedOption = pembeliSel.options[pembeliSel.selectedIndex];
+  if (!selectedOption) return;
+  
+  const grade = sel.value; // 'A', 'B', or 'C'
+  const price = selectedOption.getAttribute('data-grade-' + grade.toLowerCase());
+  
+  if (price) {
+    hargaInput.value = price;
+    if (typeof calculateTotalPanen === 'function') {
+      calculateTotalPanen();
+    }
   }
 }
 
@@ -2746,30 +2783,59 @@ function renderPembelijList() {
   const container = document.getElementById('daftar-pembeli-list');
   if (!container) return;
 
-  const daftar = state.pengaturan.daftarPembeli || ['PT Sawit Jaya'];
-
-  if (daftar.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state-card" style="padding: 20px; text-align:center;">
-        <p class="text-muted" style="font-size:13px;">Belum ada pembeli terdaftar. Tambahkan pembeli pertama di atas.</p>
-      </div>
-    `;
-    return;
+  let daftar = state.pengaturan.daftarPembeli;
+  
+  // Backward compatibility: Convert strings to objects if needed
+  if (daftar && daftar.length > 0 && typeof daftar[0] === 'string') {
+    daftar = daftar.map(nama => ({
+      id: Date.now() + Math.floor(Math.random() * 1000),
+      nama: nama,
+      gradeA: state.pengaturan.harga_tbs || 2500,
+      gradeB: state.pengaturan.harga_tbs || 2500,
+      gradeC: state.pengaturan.harga_tbs || 2500
+    }));
+    state.pengaturan.daftarPembeli = daftar;
+    syncPengaturanToCloud();
+  } else if (!daftar || daftar.length === 0) {
+    daftar = [{
+      id: Date.now(),
+      nama: 'PT Sawit Jaya',
+      gradeA: 2600,
+      gradeB: 2450,
+      gradeC: 2300
+    }];
+    state.pengaturan.daftarPembeli = daftar;
   }
 
-  container.innerHTML = daftar.map((nama, idx) => `
-    <div class="pembeli-list-item" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--surface); border-radius:10px; margin-bottom:8px; border:1px solid var(--border-light); gap:10px;">
-      <div style="display:flex; align-items:center; gap:10px; flex:1;">
-        <div style="width:32px; height:32px; border-radius:50%; background:var(--accent-emerald); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; flex-shrink:0;">${idx + 1}</div>
-        <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${nama}</span>
+  container.innerHTML = daftar.map((item, idx) => `
+    <div class="pembeli-list-item" style="padding:14px; background:var(--surface); border-radius:10px; margin-bottom:10px; border:1px solid var(--border-light);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:32px; height:32px; border-radius:50%; background:var(--accent-emerald); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700;">${idx + 1}</div>
+          <span style="font-weight:700; font-size:15px; color:var(--text-primary);">${item.nama}</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm" style="padding:4px 10px; background:rgba(16,185,129,0.08); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="openPembeliModal(${idx})">
+            <i data-lucide="edit-3" style="width:13px; height:13px;"></i> Edit
+          </button>
+          <button class="btn btn-sm" style="padding:4px 10px; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="deletePembeli(${idx})">
+            <i data-lucide="trash-2" style="width:13px; height:13px;"></i> Hapus
+          </button>
+        </div>
       </div>
-      <div style="display:flex; gap:6px; flex-shrink:0;">
-        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(16,185,129,0.08); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="editPembeli(${idx})" title="Edit Nama Pembeli">
-          <i data-lucide="edit-3" style="width:13px; height:13px;"></i> Edit
-        </button>
-        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="deletePembeli(${idx})" title="Hapus Pembeli">
-          <i data-lucide="trash-2" style="width:13px; height:13px;"></i> Hapus
-        </button>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; background:#f9fafb; padding:10px; border-radius:8px;">
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade A</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeA)}</div>
+        </div>
+        <div style="text-align:center; border-left:1px solid #e5e7eb; border-right:1px solid #e5e7eb;">
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade B</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeB)}</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; font-weight:600;">Grade C</div>
+          <div style="font-size:13px; font-weight:700; color:var(--text-primary);">Rp ${formatNumber(item.gradeC)}</div>
+        </div>
       </div>
     </div>
   `).join('');
@@ -2777,104 +2843,99 @@ function renderPembelijList() {
   if (window.lucide) lucide.createIcons();
 }
 
-async function syncPengaturanToCloud() {
-  if (window.ApiService && ApiService.isOnline()) {
-    try {
-      await ApiService.pengaturan.save(state.pengaturan);
-    } catch (err) {
-      console.warn('Gagal sync pengaturan (pembeli) ke Cloudflare D1:', err);
-    }
-  }
-}
-
-async function editPembeli(idx) {
-  const daftar = state.pengaturan.daftarPembeli || [];
-  const oldNama = daftar[idx];
-  if (!oldNama) return;
-
-  const newNama = prompt(`Ubah nama perusahaan pembeli TBS:`, oldNama);
-  if (newNama === null) return; // User membukukan cancel
-
-  const trimmed = newNama.trim();
-  if (!trimmed) {
-    showToast('Nama pembeli tidak boleh kosong!', 'error');
-    return;
-  }
-
-  if (trimmed.toLowerCase() !== oldNama.toLowerCase() && daftar.some(p => p.toLowerCase() === trimmed.toLowerCase())) {
-    showToast(`Pembeli "${trimmed}" sudah ada dalam daftar!`, 'error');
-    return;
-  }
-
-  // Update di daftar pembeli
-  state.pengaturan.daftarPembeli[idx] = trimmed;
-
-  // Sinkronkan juga pada transaksi panen yang menggunakan nama lama
-  let updatedCount = 0;
-  state.panenList.forEach(p => {
-    if (p.pembeli === oldNama) {
-      p.pembeli = trimmed;
-      updatedCount++;
-    }
-  });
-
-  localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
-  saveLocalState();
-
-  renderPembelijList();
-  renderPanenTable();
-  updatePanenRingkasan();
+function openPembeliModal(idx = -1) {
+  const modal = document.getElementById('modal-pembeli');
+  const title = document.getElementById('modal-pembeli-title');
+  const idxInput = document.getElementById('pembeli-idx');
   
-  syncPengaturanToCloud();
-
-  if (updatedCount > 0) {
-    showToast(`Pembeli diubah menjadi "${trimmed}" (${updatedCount} transaksi panen diperbarui).`, 'success');
+  if (idx >= 0) {
+    const item = state.pengaturan.daftarPembeli[idx];
+    title.textContent = 'Edit Pembeli TBS';
+    idxInput.value = idx;
+    document.getElementById('pembeli-nama').value = item.nama;
+    document.getElementById('pembeli-grade-a').value = item.gradeA;
+    document.getElementById('pembeli-grade-b').value = item.gradeB;
+    document.getElementById('pembeli-grade-c').value = item.gradeC;
   } else {
-    showToast(`Nama pembeli berhasil diubah menjadi "${trimmed}".`, 'success');
+    title.textContent = 'Tambah Pembeli TBS';
+    idxInput.value = -1;
+    document.getElementById('form-pembeli').reset();
+    
+    // Set default grades to global price
+    const globalPrice = state.pengaturan.harga_tbs || 2500;
+    document.getElementById('pembeli-grade-a').value = globalPrice + 100;
+    document.getElementById('pembeli-grade-b').value = globalPrice;
+    document.getElementById('pembeli-grade-c').value = globalPrice - 100;
   }
+  
+  modal.classList.remove('hidden');
 }
 
-async function addPembeli() {
-  const input = document.getElementById('input-tambah-pembeli');
-  const nama = input ? input.value.trim() : '';
-
-  if (!nama) {
-    showToast('Nama pembeli tidak boleh kosong!', 'error');
-    return;
-  }
-
+async function handleSavePembeli(e) {
+  e.preventDefault();
+  
+  const idx = parseInt(document.getElementById('pembeli-idx').value);
+  const nama = document.getElementById('pembeli-nama').value.trim();
+  const gradeA = parseFloat(document.getElementById('pembeli-grade-a').value) || 0;
+  const gradeB = parseFloat(document.getElementById('pembeli-grade-b').value) || 0;
+  const gradeC = parseFloat(document.getElementById('pembeli-grade-c').value) || 0;
+  
+  if (!nama) return showToast('Nama pembeli harus diisi!', 'error');
+  
   if (!Array.isArray(state.pengaturan.daftarPembeli)) {
     state.pengaturan.daftarPembeli = [];
   }
-
-  if (state.pengaturan.daftarPembeli.some(p => p.toLowerCase() === nama.toLowerCase())) {
-    showToast(`Pembeli "${nama}" sudah ada dalam daftar!`, 'error');
-    return;
+  
+  const isDuplicate = state.pengaturan.daftarPembeli.some((p, i) => p.nama.toLowerCase() === nama.toLowerCase() && i !== idx);
+  if (isDuplicate) {
+    return showToast(\`Pembeli "\${nama}" sudah ada dalam daftar!\`, 'error');
   }
-
-  state.pengaturan.daftarPembeli.push(nama);
+  
+  const oldNama = idx >= 0 ? state.pengaturan.daftarPembeli[idx].nama : null;
+  
+  const newItem = {
+    id: idx >= 0 ? state.pengaturan.daftarPembeli[idx].id : Date.now(),
+    nama, gradeA, gradeB, gradeC
+  };
+  
+  if (idx >= 0) {
+    state.pengaturan.daftarPembeli[idx] = newItem;
+    
+    // Update old records in Panen if name changed
+    if (oldNama && oldNama !== nama) {
+      state.panenList.forEach(p => {
+        if (p.pembeli === oldNama) p.pembeli = nama;
+      });
+      renderPanenTable();
+      updatePanenRingkasan();
+    }
+  } else {
+    state.pengaturan.daftarPembeli.push(newItem);
+  }
+  
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
-
-  if (input) input.value = '';
-
+  saveLocalState();
+  
   renderPembelijList();
-  showToast(`Pembeli "${nama}" berhasil ditambahkan!`, 'success');
+  closeModal('modal-pembeli');
+  showToast(\`Pembeli "\${nama}" berhasil disimpan!\`, 'success');
   
   syncPengaturanToCloud();
 }
 
 async function deletePembeli(idx) {
   const daftar = state.pengaturan.daftarPembeli || [];
-  const nama = daftar[idx];
+  const item = daftar[idx];
+  if (!item) return;
 
-  if (!nama) return;
+  const nama = item.nama;
 
   // Cek apakah pembeli digunakan di data panen
   const used = state.panenList.some(p => p.pembeli === nama);
   if (used) {
     const confirmed = await showConfirmDialog({
       title: 'Hapus Pembeli?',
-      message: `Pembeli "${nama}" sudah digunakan di beberapa catatan panen. Data panen yang ada tidak akan berubah, namun pembeli ini tidak akan muncul lagi di dropdown. Lanjutkan?`,
+      message: \`Pembeli "\${nama}" sudah digunakan di beberapa catatan panen. Data panen yang ada tidak akan berubah, namun pembeli ini tidak akan muncul lagi di dropdown. Lanjutkan?\`,
       confirmText: 'Ya, Hapus dari Daftar',
       cancelText: 'Batal',
       type: 'warning',
@@ -2884,7 +2945,7 @@ async function deletePembeli(idx) {
   } else {
     const confirmed = await showConfirmDialog({
       title: 'Hapus Pembeli?',
-      message: `Apakah Anda yakin ingin menghapus "${nama}" dari daftar pembeli TBS?`,
+      message: \`Apakah Anda yakin ingin menghapus "\${nama}" dari daftar pembeli TBS?\`,
       confirmText: 'Ya, Hapus',
       cancelText: 'Batal',
       type: 'danger',
@@ -2897,13 +2958,19 @@ async function deletePembeli(idx) {
 
   // Pastikan selalu ada minimal 1 pembeli
   if (state.pengaturan.daftarPembeli.length === 0) {
-    state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
+    state.pengaturan.daftarPembeli = [{
+      id: Date.now(),
+      nama: 'PT Sawit Jaya',
+      gradeA: 2600,
+      gradeB: 2450,
+      gradeC: 2300
+    }];
     showToast('Daftar pembeli tidak boleh kosong. Pembeli default dipulihkan.', 'error');
   }
 
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
   renderPembelijList();
-  showToast(`Pembeli "${nama}" telah dihapus dari daftar.`, 'error');
+  showToast(\`Pembeli "\${nama}" telah dihapus dari daftar.\`, 'error');
   
   syncPengaturanToCloud();
 }
