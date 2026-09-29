@@ -1082,7 +1082,7 @@ const MONTH_NAMES = [
 function getLaporanBlocks() {
   const set = new Set();
   state.lahanList.forEach(l => {
-    if (l.nama) set.add(l.nama.split(' - ')[0].trim());
+    if (l.nama) set.add(l.nama.trim());
   });
   state.panenList.forEach(p => {
     if (p.blok) set.add(p.blok.trim());
