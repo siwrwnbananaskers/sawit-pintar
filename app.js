@@ -115,29 +115,44 @@ document.addEventListener('DOMContentLoaded', async () => {
    PERSISTENCE & USER PROFILE SYNCHRONIZATION
    ========================================================================== */
 async function loadSavedData() {
-  // Clear legacy mock data once if detected, ensuring clean slate for real user input
+  // Clear legacy mock data completely for v5 clean slate
   try {
-    const dummyCleaned = localStorage.getItem('sawit_dummy_cleaned_v3');
+    const dummyCleaned = localStorage.getItem('sawit_dummy_cleaned_v5');
     if (!dummyCleaned) {
-      const savedLahan = localStorage.getItem('sawit_lahan_list');
-      if (savedLahan && savedLahan.includes('Blok A - Mandiri')) {
-        localStorage.removeItem('sawit_lahan_list');
-        localStorage.removeItem('sawit_kegiatan_list');
-        localStorage.removeItem('sawit_panen_list');
-        localStorage.removeItem('sawit_cuaca_list');
-        localStorage.removeItem('sawit_pekerja_list');
-      }
-      localStorage.setItem('sawit_dummy_cleaned_v3', 'true');
+      localStorage.removeItem('sawit_lahan_list');
+      localStorage.removeItem('sawit_kegiatan_list');
+      localStorage.removeItem('sawit_panen_list');
+      localStorage.removeItem('sawit_cuaca_list');
+      localStorage.removeItem('sawit_pekerja_list');
+      localStorage.setItem('sawit_dummy_cleaned_v5', 'true');
     }
   } catch (cleanErr) {
     console.warn('Dummy cleanup note', cleanErr);
   }
 
+  // Helper filter to purge dummy mock records if present
+  const isMockRecord = (item) => {
+    if (!item) return true;
+    const str = JSON.stringify(item);
+    return str.includes('LAPAK TBS') || 
+           str.includes('Joko Widodo') || 
+           str.includes('Sutrisno') || 
+           str.includes('Budi Santoso') || 
+           str.includes('Hasan Basri') || 
+           str.includes('Dedi Kurniawan') || 
+           str.includes('2023-09-23') || 
+           str.includes('2023-09-24') || 
+           str.includes('2023-09-20') || 
+           str.includes('CV Berkah Sawit') || 
+           str.includes('PT Agro Lestari') || 
+           str.includes('Blok A - Mandiri');
+  };
+
   // 1. Load LocalStorage first (instant paint)
   try {
     const savedPekerja = localStorage.getItem('sawit_pekerja_list');
     if (savedPekerja) {
-      const parsed = JSON.parse(savedPekerja);
+      const parsed = JSON.parse(savedPekerja).filter(p => !isMockRecord(p) || p.posisi === 'Estate Manager');
       state.pekerjaList = Array.isArray(parsed) && parsed.length > 0 ? parsed : [{ ...DEFAULT_ESTATE_MANAGER }];
     } else {
       state.pekerjaList = [{ ...DEFAULT_ESTATE_MANAGER }];
@@ -149,18 +164,18 @@ async function loadSavedData() {
     }
 
     const savedLahan = localStorage.getItem('sawit_lahan_list');
-    if (savedLahan) state.lahanList = JSON.parse(savedLahan);
+    if (savedLahan) state.lahanList = JSON.parse(savedLahan).filter(l => !isMockRecord(l));
     const savedKegiatan = localStorage.getItem('sawit_kegiatan_list');
-    if (savedKegiatan) state.kegiatanList = JSON.parse(savedKegiatan);
+    if (savedKegiatan) state.kegiatanList = JSON.parse(savedKegiatan).filter(k => !isMockRecord(k));
     const savedPanen = localStorage.getItem('sawit_panen_list');
-    if (savedPanen) state.panenList = JSON.parse(savedPanen);
+    if (savedPanen) state.panenList = JSON.parse(savedPanen).filter(p => !isMockRecord(p));
     const savedCuaca = localStorage.getItem('sawit_cuaca_list');
-    if (savedCuaca) state.cuacaList = JSON.parse(savedCuaca);
+    if (savedCuaca) state.cuacaList = JSON.parse(savedCuaca).filter(c => !isMockRecord(c));
+
     const savedPengaturan = localStorage.getItem('sawit_pengaturan');
     if (savedPengaturan) {
       const parsedPengaturan = JSON.parse(savedPengaturan);
       state.pengaturan = { ...state.pengaturan, ...parsedPengaturan };
-      // Ensure daftarPembeli is always an array
       if (!Array.isArray(state.pengaturan.daftarPembeli) || state.pengaturan.daftarPembeli.length === 0) {
         state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
       }
@@ -205,11 +220,26 @@ async function loadSavedData() {
           ApiService.pengaturan.get()
         ]);
 
-        if (dbLahan && dbLahan.length > 0) state.lahanList = dbLahan;
-        if (dbPekerja && dbPekerja.length > 0) state.pekerjaList = dbPekerja;
-        if (dbKegiatan && dbKegiatan.length > 0) state.kegiatanList = dbKegiatan;
-        if (dbPanen && dbPanen.length > 0) state.panenList = dbPanen;
-        if (dbCuaca && dbCuaca.length > 0) state.cuacaList = dbCuaca;
+        if (dbLahan && Array.isArray(dbLahan)) {
+          const cleanLahan = dbLahan.filter(l => !isMockRecord(l));
+          if (cleanLahan.length > 0) state.lahanList = cleanLahan;
+        }
+        if (dbPekerja && Array.isArray(dbPekerja)) {
+          const cleanPekerja = dbPekerja.filter(p => !isMockRecord(p) || p.posisi === 'Estate Manager');
+          if (cleanPekerja.length > 0) state.pekerjaList = cleanPekerja;
+        }
+        if (dbKegiatan && Array.isArray(dbKegiatan)) {
+          const cleanKegiatan = dbKegiatan.filter(k => !isMockRecord(k));
+          state.kegiatanList = cleanKegiatan;
+        }
+        if (dbPanen && Array.isArray(dbPanen)) {
+          const cleanPanen = dbPanen.filter(p => !isMockRecord(p));
+          state.panenList = cleanPanen;
+        }
+        if (dbCuaca && Array.isArray(dbCuaca)) {
+          const cleanCuaca = dbCuaca.filter(c => !isMockRecord(c));
+          state.cuacaList = cleanCuaca;
+        }
         if (dbPengaturan) {
           state.pengaturan = {
             ...state.pengaturan,
@@ -227,6 +257,9 @@ async function loadSavedData() {
   } else {
     updateApiStatusBadge(false);
   }
+
+  // Simpan state yang sudah bersih kembali ke LocalStorage
+  saveLocalState();
 
   // Render initial settings and weather
   renderSettingsUI();
