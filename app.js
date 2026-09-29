@@ -238,6 +238,11 @@ async function loadSavedData() {
                 status: item.status || 'Produktif'
               });
             }
+            // Fetch updated list from D1 to synchronize D1 assigned IDs (5, 6, 7)
+            const freshLahan = await ApiService.lahan.get();
+            if (freshLahan && freshLahan.length > 0) {
+              state.lahanList = freshLahan;
+            }
             console.log('Successfully synced local lahan list to Cloudflare D1');
           }
         }

@@ -84,15 +84,15 @@ export default {
       }
 
       if (path.startsWith('/api/lahan/')) {
-        const id = path.split('/')[3];
+        const id = decodeURIComponent(path.split('/')[3]);
 
         if (method === 'PUT') {
           const body = await request.json();
           const { nama, lokasi, luas, pohon, varietas, mandor, status } = body;
 
           await db.prepare(
-            'UPDATE lahan SET nama = ?, lokasi = ?, luas = ?, pohon = ?, varietas = ?, mandor = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-          ).bind(nama, lokasi, luas, pohon, varietas, mandor || '', status, id).run();
+            'UPDATE lahan SET nama = ?, lokasi = ?, luas = ?, pohon = ?, varietas = ?, mandor = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? OR nama = ?'
+          ).bind(nama, lokasi, luas, pohon, varietas, mandor || '', status, id, nama).run();
 
           if (mandor) {
             await db.prepare('UPDATE pekerja SET blok = ? WHERE nama = ?').bind(nama, mandor).run();
@@ -102,7 +102,7 @@ export default {
         }
 
         if (method === 'DELETE') {
-          await db.prepare('DELETE FROM lahan WHERE id = ?').bind(id).run();
+          await db.prepare('DELETE FROM lahan WHERE id = ? OR nama = ?').bind(id, id).run();
           return jsonResponse({ success: true, message: 'Lahan berhasil dihapus' }, 200, corsHeaders);
         }
       }
