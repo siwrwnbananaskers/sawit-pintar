@@ -1458,6 +1458,25 @@
     </div>
   </div>
 
+  <!-- ============================================ -->
+  <!-- MODERN CONFIRMATION & ALERT DIALOG -->
+  <!-- ============================================ -->
+  <div class="modal-overlay modal-confirm-overlay hidden" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
+    <div class="modal-confirm-card">
+      <div class="confirm-icon-wrapper danger" id="confirm-modal-icon-wrap">
+        <i data-lucide="trash-2" id="confirm-modal-icon"></i>
+      </div>
+      <div class="confirm-modal-body">
+        <h3 class="confirm-modal-title" id="confirm-modal-title">Konfirmasi Hapus</h3>
+        <p class="confirm-modal-message" id="confirm-modal-message">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+      </div>
+      <div class="confirm-modal-actions" id="confirm-modal-actions">
+        <button type="button" class="btn btn-outline confirm-btn-cancel" id="btn-modal-cancel">Batal</button>
+        <button type="button" class="btn btn-danger confirm-btn-proceed" id="btn-modal-confirm">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
