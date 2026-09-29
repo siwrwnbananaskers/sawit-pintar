@@ -2376,14 +2376,20 @@ function generateRealtimeNotifications() {
   // 1. Transaction Panen Real Terakhir
   if (state.panenList && state.panenList.length > 0) {
     const latestPanen = state.panenList[0];
-    const kgFormatted = Number(latestPanen.jumlah || 0).toLocaleString('id-ID');
+    // Grup panen di tanggal dan blok yang sama agar Grade A dan B tergabung
+    const relatedPanens = state.panenList.filter(p => p.tanggal === latestPanen.tanggal && p.blok === latestPanen.blok);
+    const totalKg = relatedPanens.reduce((sum, p) => sum + (Number(p.jumlah) || 0), 0);
+    const kgFormatted = totalKg.toLocaleString('id-ID');
+    const cleanName = (latestPanen.pembeli || 'Pembeli TBS').replace(/\s*\(Grade\s+[A-Z]\)$/i, '').trim();
+
     notifs.push({
-      id: `panen_${latestPanen.id || Date.now()}`,
+      id: `panen_${latestPanen.tanggal}_${latestPanen.blok}`,
       title: `Panen ${latestPanen.blok} Selesai`,
-      detail: `${kgFormatted} kg (${latestPanen.pembeli || 'Pembeli TBS'})`,
+      detail: `${kgFormatted} kg (${cleanName})`,
       time: formatTanggal(latestPanen.tanggal) || 'Hari Ini',
       icon: 'check-circle-2',
-      color: 'green'
+      color: 'green',
+      page: 'view-panen'
     });
   }
 
@@ -2397,7 +2403,8 @@ function generateRealtimeNotifications() {
         detail: `Curah Hujan ${c.curah} mm, Suhu ${c.suhu}°C`,
         time: c.jam ? `Jam ${c.jam}` : 'Hari Ini',
         icon: 'cloud-rain',
-        color: 'yellow'
+        color: 'yellow',
+        page: 'view-cuaca'
       });
     } else {
       notifs.push({
@@ -2406,7 +2413,8 @@ function generateRealtimeNotifications() {
         detail: `${c.kondisi}, ${c.suhu}°C (${c.lokasi || 'Stasiun Kebun'})`,
         time: 'Terkoneksi IoT',
         icon: 'cloud-sun',
-        color: 'blue'
+        color: 'blue',
+        page: 'view-cuaca'
       });
     }
   }
@@ -2420,7 +2428,8 @@ function generateRealtimeNotifications() {
       detail: `${k.deskripsi} - Petugas: ${k.petugas}`,
       time: formatTanggal(k.tanggal) || 'Hari Ini',
       icon: 'calendar',
-      color: 'blue'
+      color: 'blue',
+      page: 'view-tanaman'
     });
   }
 
@@ -2433,12 +2442,30 @@ function generateRealtimeNotifications() {
       detail: `${state.lahanList.length} Blok Terdaftar (${totalLuas} Ha Total)`,
       time: 'Status Aktif',
       icon: 'map-pin',
-      color: 'green'
+      color: 'green',
+      page: 'view-tanaman'
     });
   }
 
   state.notifications = notifs;
   renderNotifications();
+}
+
+function handleNotifClick(id, page) {
+  const readState = JSON.parse(localStorage.getItem('sawit_notif_read_ids') || '[]');
+  if (!readState.includes(id)) {
+    readState.push(id);
+    localStorage.setItem('sawit_notif_read_ids', JSON.stringify(readState));
+    renderNotifications();
+  }
+  
+  if (page && typeof switchView === 'function') {
+    switchView(page);
+  }
+  
+  // Close the notification dropdown if it's open
+  const dropdown = document.querySelector('.notification-dropdown');
+  if (dropdown) dropdown.classList.remove('show');
 }
 
 function renderNotifications() {
@@ -2466,7 +2493,7 @@ function renderNotifications() {
     if (!isRead) unreadCount++;
 
     return `
-      <li class="${isRead ? '' : 'unread'}">
+      <li class="${isRead ? '' : 'unread'}" onclick="handleNotifClick('${n.id}', '${n.page}')" style="cursor: pointer; transition: background 0.2s;">
         <div class="notif-icon ${n.color || 'green'}"><i data-lucide="${n.icon || 'bell'}"></i></div>
         <div class="notif-text">
           <p><strong>${n.title}</strong>: ${n.detail}</p>
