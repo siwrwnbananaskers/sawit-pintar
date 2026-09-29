@@ -318,6 +318,38 @@ export default {
         }
       }
 
+      // ======================================================================
+      // 9. AUTENTIKASI PENGGUNA (LOGIN API)
+      // ======================================================================
+      if (path === '/api/login' && method === 'POST') {
+        const body = await request.json().catch(() => ({}));
+        const username = (body.username || '').trim().toLowerCase();
+        const password = (body.password || '').trim();
+
+        // 1. Cek fallback default
+        if ((username === 'si_wrwn' || username === 'admin') && (password === '130399' || password === '130399.' || password === 'admin')) {
+          return jsonResponse({
+            success: true,
+            user: { username: 'si_wrwn', nama: 'Wirawan, S.Kom', role: 'Estate Manager' }
+          }, 200, corsHeaders);
+        }
+
+        // 2. Cek database D1 jika ada
+        try {
+          const user = await db.prepare('SELECT * FROM pengguna WHERE LOWER(username) = ?').bind(username).first();
+          if (user && (user.password === password || user.password === password.replace(/\.$/, ''))) {
+            return jsonResponse({
+              success: true,
+              user: { username: user.username, nama: user.nama, role: user.role }
+            }, 200, corsHeaders);
+          }
+        } catch (dbErr) {
+          console.warn('DB Auth check fallback:', dbErr);
+        }
+
+        return jsonResponse({ success: false, error: 'Username atau password salah' }, 401, corsHeaders);
+      }
+
       // 404 Not Found
       return jsonResponse({ error: 'Endpoint not found' }, 404, corsHeaders);
 
