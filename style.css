@@ -714,6 +714,32 @@ body {
   border-color: var(--border-hover);
 }
 
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.25);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 5px 16px rgba(220, 38, 38, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  border: 1px solid rgba(217, 119, 6, 0.3);
+  box-shadow: 0 3px 10px rgba(245, 158, 11, 0.25);
+}
+
+.btn-warning:hover {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: 0 5px 16px rgba(217, 119, 6, 0.35);
+  transform: translateY(-1px);
+}
+
 .btn-sm {
   padding: 6px 12px;
   font-size: 12px;
@@ -1683,6 +1709,191 @@ input:checked + .slider:before {
   justify-content: flex-end;
   gap: 10px;
   flex-shrink: 0;
+}
+
+/* ==========================================================================
+   MODERN CUSTOM CONFIRMATION & ALERT DIALOG
+   Replaces archaic (kuno) browser alert() and confirm() popups
+   ========================================================================== */
+.custom-dialog-overlay {
+  position: fixed !important;
+  top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+  z-index: 99999 !important; /* Above all other modals and drawers */
+  background: rgba(10, 24, 16, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  animation: customDialogFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.custom-dialog-overlay.hidden {
+  display: none !important;
+}
+
+@keyframes customDialogFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes customDialogScaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.custom-dialog-card {
+  background: #ffffff;
+  border-radius: 22px;
+  width: 100%;
+  max-width: 440px;
+  padding: 24px 26px;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  animation: customDialogScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.custom-dialog-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.custom-dialog-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.custom-dialog-icon-badge i {
+  width: 26px;
+  height: 26px;
+}
+
+.custom-dialog-icon-badge.danger {
+  background: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.18);
+}
+
+.custom-dialog-icon-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18);
+}
+
+.custom-dialog-icon-badge.info {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.18);
+}
+
+.custom-dialog-icon-badge.success {
+  background: #d8f3dc;
+  color: #2d6a4f;
+  border: 1px solid #b7e4c7;
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.18);
+}
+
+.custom-dialog-close {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.custom-dialog-close:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.custom-dialog-close i {
+  width: 18px;
+  height: 18px;
+}
+
+.custom-dialog-body {
+  margin-bottom: 24px;
+}
+
+.custom-dialog-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
+.custom-dialog-message {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.6;
+  word-break: break-word;
+  margin: 0;
+}
+
+.custom-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.custom-dialog-actions .btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 480px) {
+  .custom-dialog-card {
+    padding: 22px 18px;
+    border-radius: 20px;
+    width: 95%;
+  }
+
+  .custom-dialog-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .custom-dialog-actions .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+  }
 }
 
 /* ==========================================================================

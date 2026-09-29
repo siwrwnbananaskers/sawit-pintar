@@ -1458,6 +1458,30 @@
     </div>
   </div>
 
+  <!-- Modern Custom Confirmation & Alert Modal Dialog -->
+  <div class="modal-overlay hidden custom-dialog-overlay" id="modal-custom-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-dialog-title">
+    <div class="custom-dialog-card" id="custom-dialog-card">
+      <div class="custom-dialog-top">
+        <div class="custom-dialog-icon-badge danger" id="custom-dialog-icon-box">
+          <i data-lucide="trash-2" id="custom-dialog-icon"></i>
+        </div>
+        <button type="button" class="custom-dialog-close" id="custom-dialog-close-btn" aria-label="Tutup Dialog">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="custom-dialog-body">
+        <h3 class="custom-dialog-title" id="custom-dialog-title">Konfirmasi Tindakan</h3>
+        <p class="custom-dialog-message" id="custom-dialog-message">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+      </div>
+      <div class="custom-dialog-actions" id="custom-dialog-actions">
+        <button type="button" class="btn btn-outline custom-dialog-btn-cancel" id="custom-dialog-btn-cancel">Batal</button>
+        <button type="button" class="btn btn-danger custom-dialog-btn-confirm" id="custom-dialog-btn-confirm">
+          <span id="custom-dialog-btn-confirm-text">Ya, Lanjutkan</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 

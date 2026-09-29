@@ -1000,6 +1000,8 @@ function populateBlokDropdown(selectedBlok = '') {
    MODAL CONTROLS & CRUD OPERATIONS
    ========================================================================== */
 function initModals() {
+  initCustomDialog();
+
   // Lahan modal button
   document.getElementById('btn-tambah-lahan')?.addEventListener('click', () => {
     document.getElementById('form-lahan')?.reset();
@@ -1177,7 +1179,16 @@ async function deleteLahan(id) {
   const lahan = state.lahanList.find(x => x.id === id);
   if (!lahan) return;
 
-  if (confirm(`Apakah Anda yakin ingin menghapus data "${lahan.nama}"?`)) {
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Data Lahan?',
+    message: `Data lahan "${lahan.nama}" (${lahan.luas} Ha) beserta penugasan pekerja terkait akan dihapus secara permanen.`,
+    confirmText: 'Ya, Hapus Lahan',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'trash-2'
+  });
+
+  if (confirmed) {
     state.lahanList = state.lahanList.filter(x => x.id !== id);
     state.pekerjaList.forEach(p => {
       if (p.blok === lahan.nama) p.blok = 'Belum Ditugaskan';
@@ -1298,11 +1309,26 @@ async function deletePekerja(id) {
   if (!worker) return;
 
   if (worker.posisi === 'Estate Manager' || worker.id === 'PK-01') {
-    alert('Estate Manager utama tidak dapat dihapus. Anda dapat mengubah nama, email, dan kontaknya melalui tombol Edit.');
+    await showAlertDialog({
+      title: 'Estate Manager Utama',
+      message: 'Estate Manager utama tidak dapat dihapus. Anda dapat mengubah nama, email, dan kontaknya melalui tombol Edit.',
+      confirmText: 'Mengerti',
+      type: 'warning',
+      icon: 'shield-alert'
+    });
     return;
   }
 
-  if (confirm(`Apakah Anda yakin ingin menghapus data karyawan "${worker.nama}"?`)) {
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Data Karyawan?',
+    message: `Apakah Anda yakin ingin menghapus data karyawan "${worker.nama}" (${worker.posisi})?`,
+    confirmText: 'Ya, Hapus Karyawan',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'user-x'
+  });
+
+  if (confirmed) {
     state.pekerjaList = state.pekerjaList.filter(p => p.id !== id);
     state.lahanList.forEach(l => {
       if (l.mandor === worker.nama) l.mandor = '';
@@ -1346,7 +1372,19 @@ async function handleSaveKegiatan(e) {
 }
 
 async function deleteKegiatan(id) {
-  if (confirm('Hapus catatan kegiatan ini?')) {
+  const item = state.kegiatanList.find(x => x.id === id);
+  const detail = item ? `kegiatan "${item.jenis}" pada blok ${item.blok}` : 'catatan kegiatan ini';
+
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Catatan Kegiatan?',
+    message: `Apakah Anda yakin ingin menghapus ${detail}? Data yang terhapus tidak dapat dikembalikan.`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'trash-2'
+  });
+
+  if (confirmed) {
     state.kegiatanList = state.kegiatanList.filter(x => x.id !== id);
 
     if (window.ApiService && ApiService.isOnline()) {
@@ -1392,7 +1430,19 @@ async function handleSavePanen(e) {
 }
 
 async function deletePanen(id) {
-  if (confirm('Hapus catatan panen ini?')) {
+  const item = state.panenList.find(x => x.id === id);
+  const detail = item ? `catatan panen blok ${item.blok} (${item.jumlahTon} Ton)` : 'catatan panen ini';
+
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Catatan Panen?',
+    message: `Apakah Anda yakin ingin menghapus ${detail}? Rekapitulasi tonase dan pendapatan panen akan diperbarui.`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'trash-2'
+  });
+
+  if (confirmed) {
     state.panenList = state.panenList.filter(x => x.id !== id);
 
     if (window.ApiService && ApiService.isOnline()) {
@@ -1433,7 +1483,19 @@ async function handleSaveCuaca(e) {
 }
 
 async function deleteCuaca(id) {
-  if (confirm('Hapus data cuaca ini?')) {
+  const item = state.cuacaList.find(x => x.id === id);
+  const detail = item ? `data cuaca tanggal ${item.tanggal} (${item.kondisi}, ${item.suhu}°C)` : 'data cuaca ini';
+
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Data Cuaca?',
+    message: `Apakah Anda yakin ingin menghapus ${detail}? Grafik dan telemetry kebun akan disinkronkan ulang.`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'trash-2'
+  });
+
+  if (confirmed) {
     state.cuacaList = state.cuacaList.filter(x => x.id !== id);
 
     if (window.ApiService && ApiService.isOnline()) {
@@ -1560,7 +1622,16 @@ async function clearAllCuaca() {
     return;
   }
 
-  if (confirm('Apakah Anda yakin ingin menghapus SEMUA data cuaca? Data grafik, tabel, dan indikator akan dikosongkan.')) {
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Semua Data Cuaca?',
+    message: 'Apakah Anda yakin ingin menghapus SEMUA data telemetry cuaca? Seluruh riwayat grafik, tabel data, dan indikator sensor akan dikosongkan.',
+    confirmText: 'Ya, Kosongkan Semua',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'alert-triangle'
+  });
+
+  if (confirmed) {
     const itemsToDelete = [...state.cuacaList];
     state.cuacaList = [];
     saveLocalState();
@@ -2427,6 +2498,181 @@ function exportTableToCSV(tableId, filename) {
 }
 
 /* ==========================================================================
+   MODERN CUSTOM CONFIRMATION & ALERT DIALOG CONTROLLER
+   Replaces archaic (kuno) browser alert() and confirm()
+   ========================================================================== */
+let customDialogResolver = null;
+
+function initCustomDialog() {
+  const overlay = document.getElementById('modal-custom-dialog');
+  const confirmBtn = document.getElementById('custom-dialog-btn-confirm');
+  const cancelBtn = document.getElementById('custom-dialog-btn-cancel');
+  const closeBtn = document.getElementById('custom-dialog-close-btn');
+
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', () => closeCustomDialog(true));
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => closeCustomDialog(false));
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => closeCustomDialog(false));
+  }
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeCustomDialog(false);
+      }
+    });
+  }
+
+  // Keyboard shortcut listener (Escape to cancel)
+  document.addEventListener('keydown', (e) => {
+    if (overlay && !overlay.classList.contains('hidden')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCustomDialog(false);
+      }
+    }
+  });
+}
+
+function showConfirmDialog({
+  title = 'Konfirmasi Tindakan',
+  message = 'Apakah Anda yakin ingin melanjutkan tindakan ini?',
+  confirmText = 'Ya, Lanjutkan',
+  cancelText = 'Batal',
+  type = 'danger',
+  icon = null
+} = {}) {
+  return new Promise((resolve) => {
+    customDialogResolver = resolve;
+
+    const overlay = document.getElementById('modal-custom-dialog');
+    const titleEl = document.getElementById('custom-dialog-title');
+    const messageEl = document.getElementById('custom-dialog-message');
+    const iconBox = document.getElementById('custom-dialog-icon-box');
+    const confirmBtn = document.getElementById('custom-dialog-btn-confirm');
+    const confirmTextEl = document.getElementById('custom-dialog-btn-confirm-text');
+    const cancelBtn = document.getElementById('custom-dialog-btn-cancel');
+
+    if (!overlay) {
+      resolve(true);
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.textContent = message;
+    if (confirmTextEl) confirmTextEl.textContent = confirmText;
+    if (cancelBtn) {
+      cancelBtn.textContent = cancelText;
+      cancelBtn.style.display = 'inline-flex';
+    }
+
+    if (iconBox) {
+      iconBox.className = `custom-dialog-icon-badge ${type}`;
+      let iconName = icon;
+      if (!iconName) {
+        if (type === 'danger') iconName = 'trash-2';
+        else if (type === 'warning') iconName = 'alert-triangle';
+        else if (type === 'success') iconName = 'check-circle-2';
+        else iconName = 'info';
+      }
+      iconBox.innerHTML = `<i data-lucide="${iconName}"></i>`;
+    }
+
+    if (confirmBtn) {
+      confirmBtn.className = `btn btn-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'primary'} custom-dialog-btn-confirm`;
+    }
+
+    overlay.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+      if (confirmBtn) confirmBtn.focus();
+    }, 40);
+  });
+}
+
+function showAlertDialog({
+  title = 'Pemberitahuan',
+  message = '',
+  confirmText = 'Mengerti',
+  type = 'warning',
+  icon = null
+} = {}) {
+  return new Promise((resolve) => {
+    customDialogResolver = () => resolve(true);
+
+    const overlay = document.getElementById('modal-custom-dialog');
+    const titleEl = document.getElementById('custom-dialog-title');
+    const messageEl = document.getElementById('custom-dialog-message');
+    const iconBox = document.getElementById('custom-dialog-icon-box');
+    const confirmBtn = document.getElementById('custom-dialog-btn-confirm');
+    const confirmTextEl = document.getElementById('custom-dialog-btn-confirm-text');
+    const cancelBtn = document.getElementById('custom-dialog-btn-cancel');
+
+    if (!overlay) {
+      resolve(true);
+      return;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (messageEl) messageEl.textContent = message;
+    if (confirmTextEl) confirmTextEl.textContent = confirmText;
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
+    if (iconBox) {
+      iconBox.className = `custom-dialog-icon-badge ${type}`;
+      let iconName = icon;
+      if (!iconName) {
+        if (type === 'warning') iconName = 'alert-circle';
+        else if (type === 'danger') iconName = 'alert-octagon';
+        else if (type === 'success') iconName = 'check-circle-2';
+        else iconName = 'info';
+      }
+      iconBox.innerHTML = `<i data-lucide="${iconName}"></i>`;
+    }
+
+    if (confirmBtn) {
+      confirmBtn.className = `btn btn-${type === 'danger' ? 'danger' : type === 'warning' ? 'warning' : 'primary'} custom-dialog-btn-confirm`;
+    }
+
+    overlay.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+
+    setTimeout(() => {
+      if (confirmBtn) confirmBtn.focus();
+    }, 40);
+  });
+}
+
+function closeCustomDialog(result = false) {
+  const overlay = document.getElementById('modal-custom-dialog');
+  if (overlay) {
+    overlay.classList.add('hidden');
+  }
+  if (customDialogResolver) {
+    const fn = customDialogResolver;
+    customDialogResolver = null;
+    fn(result);
+  }
+}
+
+// Global exposure & native fallback replacement
+window.showConfirmDialog = showConfirmDialog;
+window.showAlertDialog = showAlertDialog;
+window.alert = function(msg) {
+  showAlertDialog({
+    title: 'Pemberitahuan Sistem',
+    message: String(msg),
+    confirmText: 'Mengerti',
+    type: 'warning',
+    icon: 'info'
+  });
+};
+
+/* ==========================================================================
    TOAST HELPER & DATE FORMATTING
    ========================================================================== */
 function showToast(message, type = 'success') {
@@ -2672,8 +2918,17 @@ function hideLoginError() {
   if (alertEl) alertEl.classList.add('hidden');
 }
 
-function handleLogout() {
-  if (confirm('Apakah Anda yakin ingin keluar (logout) dari portal privat Sawit Pintar?')) {
+async function handleLogout() {
+  const confirmed = await showConfirmDialog({
+    title: 'Konfirmasi Keluar',
+    message: 'Apakah Anda yakin ingin keluar (logout) dari portal privat Sawit Pintar?',
+    confirmText: 'Ya, Keluar',
+    cancelText: 'Batal',
+    type: 'warning',
+    icon: 'log-out'
+  });
+
+  if (confirmed) {
     sessionStorage.removeItem('sawit_auth_session');
     localStorage.removeItem('sawit_auth_session');
     sessionStorage.setItem('sawit_failed_attempts', '0');
