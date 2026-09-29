@@ -1410,15 +1410,31 @@ function updatePanenRingkasan() {
 
   // Pembeli utama = yang paling sering muncul di panenList (mengabaikan grade)
   const pembeliCount = {};
+  const pembeliGrades = {};
+  
   state.panenList.forEach(p => {
     if (p.pembeli) {
       // Hilangkan teks "(Grade A)" atau "(Grade B)" dari string pembeli
       const cleanName = p.pembeli.replace(/\s*\(Grade\s+[A-Z]\)$/i, '').trim();
       pembeliCount[cleanName] = (pembeliCount[cleanName] || 0) + 1;
+      
+      if (!pembeliGrades[cleanName]) pembeliGrades[cleanName] = new Set();
+      if (p.pembeli.includes('Grade A')) pembeliGrades[cleanName].add('A');
+      if (p.pembeli.includes('Grade B')) pembeliGrades[cleanName].add('B');
     }
   });
+  
   const topPembeli = Object.entries(pembeliCount).sort((a, b) => b[1] - a[1])[0];
-  const pembeli = topPembeli ? topPembeli[0] : (state.pengaturan.daftarPembeli?.[0]?.nama || state.pengaturan.daftarPembeli?.[0] || '-');
+  let pembeli = topPembeli ? topPembeli[0] : (state.pengaturan.daftarPembeli?.[0]?.nama || state.pengaturan.daftarPembeli?.[0] || '-');
+
+  if (topPembeli && pembeli !== '-') {
+    const grades = Array.from(pembeliGrades[pembeli] || []).sort();
+    if (grades.length === 2) {
+      pembeli += ` (Grade A & B)`;
+    } else if (grades.length === 1) {
+      pembeli += ` (Grade ${grades[0]})`;
+    }
+  }
 
   if (elPembeli) elPembeli.textContent = pembeli;
   if (elTotal) elTotal.textContent = `${totalKgBulan.toLocaleString('id-ID')} kg`;
