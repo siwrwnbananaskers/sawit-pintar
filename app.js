@@ -403,12 +403,6 @@ function renderUserProfile() {
   if (sidebarName) sidebarName.textContent = em.nama;
   if (sidebarRole) sidebarRole.textContent = em.posisi;
   if (sidebarAvatarImg) sidebarAvatarImg.src = em.avatar || AVATAR_PRESETS.preset1;
-
-  // Update Dynamic Footer in Login Screen
-  const loginFooterCompany = document.getElementById('login-footer-company');
-  if (loginFooterCompany) {
-    loginFooterCompany.textContent = state.profile.perusahaan || 'Sawit Pintar';
-  }
 }
 
 /* ==========================================================================
@@ -3921,6 +3915,8 @@ function updateAuthUI() {
     document.documentElement.classList.remove('is-authenticated');
     if (loginOverlay) loginOverlay.classList.remove('overlay-hidden');
     if (appContainer) appContainer.style.pointerEvents = 'none';
+    const companyNameEl = document.getElementById('login-company-name');
+    if (companyNameEl) companyNameEl.textContent = state.pengaturan.perusahaan || 'PT Sawit Lestari';
     // Focus username field
     setTimeout(() => {
       document.getElementById('login-username')?.focus();
