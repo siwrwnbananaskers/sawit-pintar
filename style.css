@@ -482,9 +482,9 @@ body {
   top: 54px;
   right: -4px;
   width: 320px;
-  background: rgba(255, 255, 255, 0.90);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--border-color);
@@ -3272,7 +3272,13 @@ html.is-authenticated .app-container {
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28) !important;
     border-radius: 12px !important;
     border: 1px solid var(--border-color) !important;
-    background: #ffffff !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .notification-dropdown::before {
+    right: 112px !important;
   }
 
   /* ── Content Body ─────────────────────── */
