@@ -288,7 +288,27 @@ async function loadSavedData() {
         // 5. Cuaca Sync
         if (dbCuaca && Array.isArray(dbCuaca)) {
           const cleanCuaca = dbCuaca.filter(c => !isMockRecord(c));
-          if (cleanCuaca.length > 0) state.cuacaList = cleanCuaca;
+          if (cleanCuaca.length > 0) {
+            state.cuacaList = cleanCuaca;
+          } else if (state.cuacaList && state.cuacaList.length > 0) {
+            // Upload local cuaca list to Cloudflare D1 database if D1 is empty!
+            for (const item of state.cuacaList) {
+              await ApiService.cuaca.create({
+                tanggal: item.tanggal,
+                jam: item.jam,
+                suhu: item.suhu,
+                kelembaban: item.kelembaban,
+                curah: item.curah,
+                kondisi: item.kondisi,
+                lokasi: item.lokasi || (state.weatherLocation ? state.weatherLocation.name : 'Tegalsari, Musi Rawas')
+              });
+            }
+            const freshCuaca = await ApiService.cuaca.get();
+            if (freshCuaca && freshCuaca.length > 0) {
+              state.cuacaList = freshCuaca;
+            }
+            console.log('Successfully synced local weather records to Cloudflare D1');
+          }
         }
 
         // 6. Pengaturan Sync
@@ -2040,22 +2060,33 @@ async function handleSaveCuaca(e) {
   const kelembaban = parseFloat(document.getElementById('cuaca-kelembaban').value);
   const curah = parseFloat(document.getElementById('cuaca-curah').value);
   const kondisi = document.getElementById('cuaca-kondisi').value;
+  const lokasi = (state.weatherLocation && state.weatherLocation.name) ? state.weatherLocation.name : 'Tegalsari, Musi Rawas';
 
-  const payload = { tanggal, jam, suhu, kelembaban, curah, kondisi };
+  const payload = { tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi };
   const newCuaca = { id: Date.now(), ...payload };
 
   state.cuacaList.unshift(newCuaca);
 
-  if (window.ApiService && ApiService.isOnline()) {
-    ApiService.cuaca.create(payload);
+  let dbSuccess = false;
+  if (window.ApiService) {
+    try {
+      const res = await ApiService.cuaca.create(payload);
+      if (res && res.success) {
+        dbSuccess = true;
+        if (res.id) newCuaca.id = res.id;
+      }
+    } catch (err) {
+      console.warn('Gagal simpan data cuaca ke Cloudflare D1:', err);
+    }
   }
 
   saveLocalState();
   renderCuacaTable();
   updateWeatherUI(payload);
   updateWeatherChart();
+  generateRealtimeNotifications();
   closeModal('modal-cuaca');
-  showToast('Data cuaca berhasil ditambahkan');
+  showToast(`Data cuaca berhasil ditambahkan ${dbSuccess ? '& disinkronkan ke Cloudflare D1' : ''}`, 'success');
 }
 
 async function deleteCuaca(id) {
@@ -2487,9 +2518,9 @@ async function syncWeatherData() {
     .sort((a, b) => b.tanggal.localeCompare(a.tanggal));
   saveLocalState();
 
-  // Sync to Cloudflare D1 Backend if online
+  // Sync to Cloudflare D1 Backend if API configured
   const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
-  if (api && api.isOnline()) {
+  if (api && api.getBaseUrl()) {
     for (const item of newItemsToPush) {
       try {
         await api.cuaca.create({
