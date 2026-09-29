@@ -2563,7 +2563,8 @@ async function syncWeatherData() {
   };
 
   let fetchedList = [];
-  const todayStr = new Date().toISOString().split('T')[0];
+  const __tObj = new Date();
+  const todayStr = `${__tObj.getFullYear()}-${String(__tObj.getMonth() + 1).padStart(2, '0')}-${String(__tObj.getDate()).padStart(2, '0')}`;
 
   try {
     // Open-Meteo 7-day past telemetry using configured latitude & longitude
@@ -2616,7 +2617,7 @@ async function syncWeatherData() {
     for (let i = 6; i >= 0; i--) {
       const date = new Date(todayObj);
       date.setDate(date.getDate() - i);
-      const isoDate = date.toISOString().split('T')[0];
+      const isoDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
       const suhu = Math.round(28 + Math.random() * 5);
       const kelembaban = Math.round(72 + Math.random() * 16);
