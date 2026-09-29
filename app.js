@@ -2376,7 +2376,6 @@ function generateRealtimeNotifications() {
   // 1. Transaction Panen Real Terakhir
   if (state.panenList && state.panenList.length > 0) {
     const latestPanen = state.panenList[0];
-    // Grup panen di tanggal dan blok yang sama agar Grade A dan B tergabung
     const relatedPanens = state.panenList.filter(p => p.tanggal === latestPanen.tanggal && p.blok === latestPanen.blok);
     const totalKg = relatedPanens.reduce((sum, p) => sum + (Number(p.jumlah) || 0), 0);
     const kgFormatted = totalKg.toLocaleString('id-ID');
@@ -2389,7 +2388,7 @@ function generateRealtimeNotifications() {
       time: formatTanggal(latestPanen.tanggal) || 'Hari Ini',
       icon: 'check-circle-2',
       color: 'green',
-      page: 'view-panen'
+      page: 'hasil-panen'
     });
   }
 
@@ -2404,7 +2403,7 @@ function generateRealtimeNotifications() {
         time: c.jam ? `Jam ${c.jam}` : 'Hari Ini',
         icon: 'cloud-rain',
         color: 'yellow',
-        page: 'view-cuaca'
+        page: 'monitoring-cuaca'
       });
     } else {
       notifs.push({
@@ -2414,7 +2413,7 @@ function generateRealtimeNotifications() {
         time: 'Terkoneksi IoT',
         icon: 'cloud-sun',
         color: 'blue',
-        page: 'view-cuaca'
+        page: 'monitoring-cuaca'
       });
     }
   }
@@ -2429,7 +2428,7 @@ function generateRealtimeNotifications() {
       time: formatTanggal(k.tanggal) || 'Hari Ini',
       icon: 'calendar',
       color: 'blue',
-      page: 'view-tanaman'
+      page: 'perkembangan'
     });
   }
 
@@ -2443,7 +2442,7 @@ function generateRealtimeNotifications() {
       time: 'Status Aktif',
       icon: 'map-pin',
       color: 'green',
-      page: 'view-tanaman'
+      page: 'data-lahan'
     });
   }
 
