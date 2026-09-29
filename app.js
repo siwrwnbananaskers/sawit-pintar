@@ -178,8 +178,15 @@ async function loadSavedData() {
     if (savedPengaturan) {
       const parsedPengaturan = JSON.parse(savedPengaturan);
       state.pengaturan = { ...state.pengaturan, ...parsedPengaturan };
+      
+      // Migration for daftarPembeli
       if (!Array.isArray(state.pengaturan.daftarPembeli) || state.pengaturan.daftarPembeli.length === 0) {
-        state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
+        state.pengaturan.daftarPembeli = [{ nama: 'PT Sawit Jaya', gradeA: 2600, gradeB: 2400 }];
+      } else {
+        state.pengaturan.daftarPembeli = state.pengaturan.daftarPembeli.map(p => {
+          if (typeof p === 'string') return { nama: p, gradeA: 2500, gradeB: 2300 };
+          return p;
+        });
       }
     }
   } catch (err) {
@@ -1606,30 +1613,49 @@ function renderKegiatanBlokFilter() {
 function populatePembelijSelect() {
   const select = document.getElementById('panen-pembeli');
   if (!select) return;
-  const daftar = (state.pengaturan.daftarPembeli || ['PT Sawit Jaya']);
+  const daftar = (state.pengaturan.daftarPembeli || [{ nama: 'PT Sawit Jaya', gradeA: 2600, gradeB: 2400 }]);
   const curVal = select.value;
-  select.innerHTML = daftar.map(p =>
-    `<option value="${p}" ${p === curVal ? 'selected' : ''}>${p}</option>`
-  ).join('');
-  // Jika ada custom option "Lainnya" di akhir
+  select.innerHTML = daftar.map(p => {
+    const nama = typeof p === 'string' ? p : p.nama;
+    const gradeA = typeof p === 'string' ? 2600 : (p.gradeA || 2600);
+    const gradeB = typeof p === 'string' ? 2400 : (p.gradeB || 2400);
+    return `<option value="${nama}" data-grade-a="${gradeA}" data-grade-b="${gradeB}" ${nama === curVal ? 'selected' : ''}>${nama}</option>`;
+  }).join('');
+  
   select.innerHTML += `<option value="__custom__">+ Lainnya (ketik manual)...</option>`;
-  if (curVal && !daftar.includes(curVal) && curVal !== '__custom__') {
-    select.value = curVal;
-  } else {
-    select.value = daftar[0] || '';
+  
+  if (!curVal || (!daftar.some(p => (p.nama || p) === curVal) && curVal !== '__custom__')) {
+    select.value = typeof daftar[0] === 'string' ? daftar[0] : daftar[0].nama;
   }
 }
 
-function handlePembeliSelectChange(sel) {
+function handlePembeliSelectChange() {
+  const sel = document.getElementById('panen-pembeli');
+  const gradeSel = document.getElementById('panen-grade');
+  const hargaInput = document.getElementById('panen-harga');
   const customGroup = document.getElementById('panen-pembeli-custom-group');
   const customInput = document.getElementById('panen-pembeli-custom');
-  if (!customGroup) return;
+  
+  if (!sel) return;
+  
   if (sel.value === '__custom__') {
-    customGroup.style.display = '';
+    if (customGroup) customGroup.style.display = '';
     if (customInput) customInput.required = true;
   } else {
-    customGroup.style.display = 'none';
+    if (customGroup) customGroup.style.display = 'none';
     if (customInput) { customInput.required = false; customInput.value = ''; }
+    
+    // Auto-fill price based on Grade
+    const selectedOption = sel.options[sel.selectedIndex];
+    if (selectedOption && gradeSel && hargaInput) {
+      const grade = gradeSel.value;
+      if (grade === 'A') {
+        hargaInput.value = selectedOption.getAttribute('data-grade-a') || 2600;
+      } else if (grade === 'B') {
+        hargaInput.value = selectedOption.getAttribute('data-grade-b') || 2400;
+      }
+      if (typeof calculateTotalPanen === 'function') calculateTotalPanen();
+    }
   }
 }
 
@@ -2746,25 +2772,28 @@ function renderPembelijList() {
   const container = document.getElementById('daftar-pembeli-list');
   if (!container) return;
 
-  const daftar = state.pengaturan.daftarPembeli || ['PT Sawit Jaya'];
-
+  let daftar = state.pengaturan.daftarPembeli || [];
+  if (daftar.length > 0 && typeof daftar[0] === 'string') {
+    daftar = daftar.map(p => ({ nama: p, gradeA: 2600, gradeB: 2400 }));
+    state.pengaturan.daftarPembeli = daftar;
+  }
   if (daftar.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state-card" style="padding: 20px; text-align:center;">
-        <p class="text-muted" style="font-size:13px;">Belum ada pembeli terdaftar. Tambahkan pembeli pertama di atas.</p>
-      </div>
-    `;
-    return;
+    daftar = [{ nama: 'PT Sawit Jaya', gradeA: 2600, gradeB: 2400 }];
+    state.pengaturan.daftarPembeli = daftar;
   }
 
-  container.innerHTML = daftar.map((nama, idx) => `
-    <div class="pembeli-list-item" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--surface); border-radius:10px; margin-bottom:8px; border:1px solid var(--border-light); gap:10px;">
-      <div style="display:flex; align-items:center; gap:10px; flex:1;">
+  container.innerHTML = daftar.map((item, idx) => `
+    <div class="pembeli-list-item" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--surface); border-radius:10px; margin-bottom:8px; border:1px solid var(--border-light); gap:10px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px; flex:1; min-width: 200px;">
         <div style="width:32px; height:32px; border-radius:50%; background:var(--accent-emerald); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; flex-shrink:0;">${idx + 1}</div>
-        <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${nama}</span>
+        <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${item.nama}</span>
+      </div>
+      <div style="display:flex; gap:16px; flex-wrap: wrap; margin-right: 10px;">
+        <div style="font-size: 13px; color: var(--text-secondary);"><strong style="color:var(--text-primary);">Grade A:</strong> Rp ${item.gradeA || 2600}/kg</div>
+        <div style="font-size: 13px; color: var(--text-secondary);"><strong style="color:var(--text-primary);">Grade B:</strong> Rp ${item.gradeB || 2400}/kg</div>
       </div>
       <div style="display:flex; gap:6px; flex-shrink:0;">
-        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(16,185,129,0.08); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="editPembeli(${idx})" title="Edit Nama Pembeli">
+        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(16,185,129,0.08); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="editPembeli(${idx})" title="Edit Pembeli">
           <i data-lucide="edit-3" style="width:13px; height:13px;"></i> Edit
         </button>
         <button class="btn btn-sm" style="padding:4px 10px; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="deletePembeli(${idx})" title="Hapus Pembeli">
@@ -2787,36 +2816,53 @@ async function syncPengaturanToCloud() {
   }
 }
 
-async function editPembeli(idx) {
+function editPembeli(idx) {
   const daftar = state.pengaturan.daftarPembeli || [];
-  const oldNama = daftar[idx];
-  if (!oldNama) return;
+  const item = daftar[idx];
+  if (!item) return;
 
-  const newNama = prompt(`Ubah nama perusahaan pembeli TBS:`, oldNama);
-  if (newNama === null) return; // User membukukan cancel
+  document.getElementById('edit-pembeli-idx').value = idx;
+  document.getElementById('edit-pembeli-nama').value = item.nama;
+  document.getElementById('edit-pembeli-grade-a').value = item.gradeA || 2600;
+  document.getElementById('edit-pembeli-grade-b').value = item.gradeB || 2400;
 
-  const trimmed = newNama.trim();
-  if (!trimmed) {
+  openModal('modal-edit-pembeli');
+}
+
+async function saveEditPembeli(e) {
+  e.preventDefault();
+  const idx = document.getElementById('edit-pembeli-idx').value;
+  const newNama = document.getElementById('edit-pembeli-nama').value.trim();
+  const newGradeA = parseInt(document.getElementById('edit-pembeli-grade-a').value, 10) || 2600;
+  const newGradeB = parseInt(document.getElementById('edit-pembeli-grade-b').value, 10) || 2400;
+
+  if (!newNama) {
     showToast('Nama pembeli tidak boleh kosong!', 'error');
     return;
   }
 
-  if (trimmed.toLowerCase() !== oldNama.toLowerCase() && daftar.some(p => p.toLowerCase() === trimmed.toLowerCase())) {
-    showToast(`Pembeli "${trimmed}" sudah ada dalam daftar!`, 'error');
+  const daftar = state.pengaturan.daftarPembeli || [];
+  const oldItem = daftar[idx];
+  const oldNama = oldItem.nama;
+
+  if (newNama.toLowerCase() !== oldNama.toLowerCase() && daftar.some(p => p.nama.toLowerCase() === newNama.toLowerCase())) {
+    showToast(`Pembeli "${newNama}" sudah ada dalam daftar!`, 'error');
     return;
   }
 
-  // Update di daftar pembeli
-  state.pengaturan.daftarPembeli[idx] = trimmed;
+  // Update
+  state.pengaturan.daftarPembeli[idx] = { nama: newNama, gradeA: newGradeA, gradeB: newGradeB };
 
-  // Sinkronkan juga pada transaksi panen yang menggunakan nama lama
+  // Sync with panen list if name changed
   let updatedCount = 0;
-  state.panenList.forEach(p => {
-    if (p.pembeli === oldNama) {
-      p.pembeli = trimmed;
-      updatedCount++;
-    }
-  });
+  if (newNama !== oldNama) {
+    state.panenList.forEach(p => {
+      if (p.pembeli === oldNama) {
+        p.pembeli = newNama;
+        updatedCount++;
+      }
+    });
+  }
 
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
   saveLocalState();
@@ -2824,19 +2870,25 @@ async function editPembeli(idx) {
   renderPembelijList();
   renderPanenTable();
   updatePanenRingkasan();
-  
+  closeModal('modal-edit-pembeli');
+
   syncPengaturanToCloud();
 
   if (updatedCount > 0) {
-    showToast(`Pembeli diubah menjadi "${trimmed}" (${updatedCount} transaksi panen diperbarui).`, 'success');
+    showToast(`Pembeli diubah menjadi "${newNama}" (${updatedCount} transaksi panen diperbarui).`, 'success');
   } else {
-    showToast(`Nama pembeli berhasil diubah menjadi "${trimmed}".`, 'success');
+    showToast(`Pembeli "${newNama}" berhasil diperbarui.`, 'success');
   }
 }
 
 async function addPembeli() {
-  const input = document.getElementById('input-tambah-pembeli');
-  const nama = input ? input.value.trim() : '';
+  const inputNama = document.getElementById('input-tambah-pembeli');
+  const inputGradeA = document.getElementById('input-tambah-grade-a');
+  const inputGradeB = document.getElementById('input-tambah-grade-b');
+  
+  const nama = inputNama ? inputNama.value.trim() : '';
+  const gradeA = inputGradeA ? (parseInt(inputGradeA.value, 10) || 2600) : 2600;
+  const gradeB = inputGradeB ? (parseInt(inputGradeB.value, 10) || 2400) : 2400;
 
   if (!nama) {
     showToast('Nama pembeli tidak boleh kosong!', 'error');
@@ -2847,15 +2899,17 @@ async function addPembeli() {
     state.pengaturan.daftarPembeli = [];
   }
 
-  if (state.pengaturan.daftarPembeli.some(p => p.toLowerCase() === nama.toLowerCase())) {
+  if (state.pengaturan.daftarPembeli.some(p => p.nama.toLowerCase() === nama.toLowerCase())) {
     showToast(`Pembeli "${nama}" sudah ada dalam daftar!`, 'error');
     return;
   }
 
-  state.pengaturan.daftarPembeli.push(nama);
+  state.pengaturan.daftarPembeli.push({ nama, gradeA, gradeB });
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
 
-  if (input) input.value = '';
+  if (inputNama) inputNama.value = '';
+  if (inputGradeA) inputGradeA.value = '2600';
+  if (inputGradeB) inputGradeB.value = '2400';
 
   renderPembelijList();
   showToast(`Pembeli "${nama}" berhasil ditambahkan!`, 'success');
@@ -2865,9 +2919,9 @@ async function addPembeli() {
 
 async function deletePembeli(idx) {
   const daftar = state.pengaturan.daftarPembeli || [];
-  const nama = daftar[idx];
-
-  if (!nama) return;
+  const item = daftar[idx];
+  if (!item) return;
+  const nama = item.nama;
 
   // Cek apakah pembeli digunakan di data panen
   const used = state.panenList.some(p => p.pembeli === nama);
@@ -2895,9 +2949,8 @@ async function deletePembeli(idx) {
 
   state.pengaturan.daftarPembeli.splice(idx, 1);
 
-  // Pastikan selalu ada minimal 1 pembeli
   if (state.pengaturan.daftarPembeli.length === 0) {
-    state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
+    state.pengaturan.daftarPembeli = [{ nama: 'PT Sawit Jaya', gradeA: 2600, gradeB: 2400 }];
     showToast('Daftar pembeli tidak boleh kosong. Pembeli default dipulihkan.', 'error');
   }
 

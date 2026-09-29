@@ -1049,9 +1049,20 @@
               </div>
               <div class="card-body">
                 <!-- Form tambah pembeli -->
-                <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
-                  <input type="text" id="input-tambah-pembeli" class="form-control" placeholder="Nama perusahaan pembeli baru... (contoh: PT Palma Jaya)" style="flex:1; min-width:220px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addPembeli();}">
-                  <button type="button" class="btn btn-primary" onclick="addPembeli()" style="white-space:nowrap; flex-shrink:0;">
+                <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items: flex-end;">
+                  <div style="flex: 2; min-width: 200px;">
+                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Nama Perusahaan Pembeli</label>
+                    <input type="text" id="input-tambah-pembeli" class="form-control" placeholder="Contoh: PT Palma Jaya">
+                  </div>
+                  <div style="flex: 1; min-width: 110px;">
+                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Grade A (Rp)</label>
+                    <input type="number" id="input-tambah-grade-a" class="form-control" placeholder="2600" value="2600">
+                  </div>
+                  <div style="flex: 1; min-width: 110px;">
+                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Grade B (Rp)</label>
+                    <input type="number" id="input-tambah-grade-b" class="form-control" placeholder="2400" value="2400">
+                  </div>
+                  <button type="button" class="btn btn-primary" onclick="addPembeli()" style="white-space:nowrap; flex-shrink:0; height: 42px;">
                     <i data-lucide="plus"></i> Tambah Pembeli
                   </button>
                 </div>
@@ -1113,6 +1124,39 @@
 
       </div>
     </main>
+  </div>
+
+  <!-- Modal Edit Pembeli -->
+  <div class="modal-overlay hidden" id="modal-edit-pembeli">
+    <div class="modal-container" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Pembeli TBS</h3>
+        <button class="modal-close" onclick="closeModal('modal-edit-pembeli')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-edit-pembeli" onsubmit="saveEditPembeli(event)">
+        <input type="hidden" id="edit-pembeli-idx">
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nama Perusahaan Pembeli</label>
+            <input type="text" id="edit-pembeli-nama" class="form-control" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Harga Grade A (Rp/kg)</label>
+              <input type="number" id="edit-pembeli-grade-a" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Harga Grade B (Rp/kg)</label>
+              <input type="number" id="edit-pembeli-grade-b" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-edit-pembeli')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- ============================================ -->
@@ -1289,11 +1333,21 @@
             <label>Estimasi Total Pendapatan</label>
             <input type="text" id="panen-total" class="form-control" readonly value="Rp 0">
           </div>
-          <div class="form-group">
-            <label>Perusahaan Pembeli <span class="required">*</span></label>
-            <select id="panen-pembeli" class="form-control" required onchange="handlePembeliSelectChange(this)">
-              <!-- Diisi otomatis dari daftar pembeli di Pengaturan -->
-            </select>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Perusahaan Pembeli <span class="required">*</span></label>
+              <select id="panen-pembeli" class="form-control" required onchange="handlePembeliSelectChange()">
+                <!-- Diisi otomatis dari daftar pembeli di Pengaturan -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Grade TBS</label>
+              <select id="panen-grade" class="form-control" onchange="handlePembeliSelectChange()">
+                <option value="A">Grade A</option>
+                <option value="B">Grade B</option>
+                <option value="C">Lainnya / Grade C</option>
+              </select>
+            </div>
           </div>
           <!-- Input custom jika pilih "Lainnya" -->
           <div class="form-group" id="panen-pembeli-custom-group" style="display:none;">
