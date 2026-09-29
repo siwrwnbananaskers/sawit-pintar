@@ -225,6 +225,13 @@ export default {
           const body = await request.json();
           const { tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi } = body;
 
+          // Auto-heal missing column
+          try {
+            await db.prepare('ALTER TABLE cuaca ADD COLUMN lokasi TEXT DEFAULT "Tegalsari, Musi Rawas"').run();
+          } catch (e) {
+            // Ignore if column already exists
+          }
+
           const res = await db.prepare(
             'INSERT INTO cuaca (tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi) VALUES (?, ?, ?, ?, ?, ?, ?)'
           ).bind(tanggal, jam, suhu, kelembaban, curah, kondisi, lokasi || 'Tegalsari, Musi Rawas').run();
