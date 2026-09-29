@@ -462,10 +462,12 @@ function initNavigation() {
     notifBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       notifDropdown.classList.toggle('hidden');
+      document.getElementById('notif-overlay')?.classList.toggle('hidden', notifDropdown.classList.contains('hidden'));
     });
     document.addEventListener('click', (e) => {
       if (!notifDropdown.contains(e.target) && e.target !== notifBtn) {
         notifDropdown.classList.add('hidden');
+        document.getElementById('notif-overlay')?.classList.add('hidden');
       }
     });
   }

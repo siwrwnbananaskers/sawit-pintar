@@ -433,6 +433,21 @@ body {
   position: relative;
 }
 
+.notif-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(18, 38, 25, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: -1;
+  animation: fadeIn 0.2s ease-out;
+  cursor: default;
+}
+
+.notif-overlay.hidden {
+  display: none;
+}
+
 .btn-icon {
   width: 38px;
   height: 38px;
