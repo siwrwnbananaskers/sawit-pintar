@@ -628,19 +628,19 @@
               <div class="card-body ringkasan-body">
                 <div class="ringkasan-item">
                   <span class="label">Total Panen Bulan Ini</span>
-                  <span class="val font-bold" id="ringkasan-total-panen">8.900 kg</span>
+                  <span class="val font-bold" id="ringkasan-total-panen">0 kg</span>
                 </div>
                 <div class="ringkasan-item">
                   <span class="label">Rata-rata Harga</span>
-                  <span class="val" id="ringkasan-rata-harga">Rp 1.244.314 / kg</span>
+                  <span class="val" id="ringkasan-rata-harga">Rp 0 / kg</span>
                 </div>
                 <div class="ringkasan-item highlight">
                   <span class="label">Total Pendapatan</span>
-                  <span class="val text-success" id="ringkasan-total-pendapatan">Rp 11.000.000</span>
+                  <span class="val text-success" id="ringkasan-total-pendapatan">Rp 0</span>
                 </div>
                 <div class="ringkasan-item">
                   <span class="label">Pembeli Utama</span>
-                  <span class="val badge-buyer" id="ringkasan-pembeli">PT Sawit Jaya</span>
+                  <span class="val badge-buyer" id="ringkasan-pembeli">-</span>
                 </div>
               </div>
             </div>
@@ -1062,6 +1062,29 @@
               </div>
             </div>
 
+            <!-- Settings Card: Daftar Pembeli TBS -->
+            <div class="card" style="grid-column: 1 / -1;">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title"><i data-lucide="building-2" style="color:var(--primary-green); vertical-align:middle;"></i> Daftar Pembeli TBS</h3>
+                  <p class="card-subtitle">Kelola daftar perusahaan pembeli Tandan Buah Segar (TBS) yang dapat dipilih saat mencatat transaksi panen.</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <!-- Form tambah pembeli -->
+                <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+                  <input type="text" id="input-tambah-pembeli" class="form-control" placeholder="Nama perusahaan pembeli baru... (contoh: PT Palma Jaya)" style="flex:1; min-width:220px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); addPembeli();}">
+                  <button type="button" class="btn btn-primary" onclick="addPembeli()" style="white-space:nowrap; flex-shrink:0;">
+                    <i data-lucide="plus"></i> Tambah Pembeli
+                  </button>
+                </div>
+                <!-- Daftar pembeli -->
+                <div id="daftar-pembeli-list">
+                  <!-- Diisi oleh JS -->
+                </div>
+              </div>
+            </div>
+
             <!-- Settings Card: Weather Station Location -->
             <div class="card" style="grid-column: 1 / -1;">
               <div class="card-header">
@@ -1289,7 +1312,15 @@
           </div>
           <div class="form-group">
             <label>Perusahaan Pembeli <span class="required">*</span></label>
-            <input type="text" id="panen-pembeli" class="form-control" value="PT Sawit Jaya" required>
+            <select id="panen-pembeli" class="form-control" required onchange="handlePembeliSelectChange(this)">
+              <!-- Diisi otomatis dari daftar pembeli di Pengaturan -->
+            </select>
+          </div>
+          <!-- Input custom jika pilih "Lainnya" -->
+          <div class="form-group" id="panen-pembeli-custom-group" style="display:none;">
+            <label>Nama Pembeli (Kustom) <span class="required">*</span></label>
+            <input type="text" id="panen-pembeli-custom" class="form-control" placeholder="Contoh: PT Palma Sejahtera">
+            <small class="text-muted" style="font-size:11px; margin-top:4px; display:block;">Anda bisa tambahkan pembeli ini ke daftar permanen di halaman Pengaturan.</small>
           </div>
         </div>
         <div class="modal-footer">

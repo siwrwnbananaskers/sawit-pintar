@@ -80,7 +80,9 @@ const state = {
     harga_tbs: 2500,
     notif_cuaca: true,
     notif_pupuk: true,
-    notif_iot: true
+    notif_iot: true,
+    // Daftar pembeli TBS yang dapat dikelola user (tambah/hapus)
+    daftarPembeli: ['PT Sawit Jaya']
   },
 
   // Tahun laporan panen (dinamis dari catatan panen user)
@@ -156,7 +158,12 @@ async function loadSavedData() {
     if (savedCuaca) state.cuacaList = JSON.parse(savedCuaca);
     const savedPengaturan = localStorage.getItem('sawit_pengaturan');
     if (savedPengaturan) {
-      state.pengaturan = { ...state.pengaturan, ...JSON.parse(savedPengaturan) };
+      const parsedPengaturan = JSON.parse(savedPengaturan);
+      state.pengaturan = { ...state.pengaturan, ...parsedPengaturan };
+      // Ensure daftarPembeli is always an array
+      if (!Array.isArray(state.pengaturan.daftarPembeli) || state.pengaturan.daftarPembeli.length === 0) {
+        state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
+      }
     }
   } catch (err) {
     console.warn('Local storage load note', err);
@@ -429,6 +436,7 @@ function initTables() {
   renderLaporanTable();
   renderPekerjaTable();
   renderDashboardActivities();
+  renderPembelijList();
   updateKPIs();
 }
 
@@ -1251,6 +1259,53 @@ function updateKPIs() {
     kpiEstimasiPanen.innerHTML = `${tonVal} <span class="unit">Ton</span>`;
     if (subEstimasi) subEstimasi.textContent = `Tahun ${curYear}`;
   }
+
+  // Update Ringkasan Panen section: Pembeli Utama, Total, Rata-rata Harga
+  updatePanenRingkasan();
+}
+
+function updatePanenRingkasan() {
+  const elPembeli = document.getElementById('ringkasan-pembeli');
+  const elTotal = document.getElementById('ringkasan-total-panen');
+  const elRataHarga = document.getElementById('ringkasan-rata-harga');
+  const elTotalPendapatan = document.getElementById('ringkasan-total-pendapatan');
+
+  if (!state.panenList || state.panenList.length === 0) {
+    if (elPembeli) elPembeli.textContent = state.pengaturan.daftarPembeli?.[0] || '-';
+    if (elTotal) elTotal.textContent = '0 kg';
+    if (elRataHarga) elRataHarga.textContent = 'Rp 0 / kg';
+    if (elTotalPendapatan) elTotalPendapatan.textContent = 'Rp 0';
+    return;
+  }
+
+  // Hitung total panen bulan ini
+  const now = new Date();
+  const curMonth = now.getMonth();
+  const curYear = now.getFullYear();
+  const bulanIni = state.panenList.filter(p => {
+    if (!p.tanggal) return false;
+    const d = new Date(p.tanggal);
+    return d.getMonth() === curMonth && d.getFullYear() === curYear;
+  });
+
+  const totalKgBulan = bulanIni.reduce((s, p) => s + (Number(p.jumlah) || 0), 0);
+  const totalPendapatan = state.panenList.reduce((s, p) => s + ((Number(p.jumlah) || 0) * (Number(p.harga) || 0)), 0);
+  const avgHarga = state.panenList.length > 0
+    ? (state.panenList.reduce((s, p) => s + (Number(p.harga) || 0), 0) / state.panenList.length)
+    : 0;
+
+  // Pembeli utama = yang paling sering muncul di panenList
+  const pembeliCount = {};
+  state.panenList.forEach(p => {
+    if (p.pembeli) pembeliCount[p.pembeli] = (pembeliCount[p.pembeli] || 0) + 1;
+  });
+  const topPembeli = Object.entries(pembeliCount).sort((a, b) => b[1] - a[1])[0];
+  const pembeli = topPembeli ? topPembeli[0] : (state.pengaturan.daftarPembeli?.[0] || '-');
+
+  if (elPembeli) elPembeli.textContent = pembeli;
+  if (elTotal) elTotal.textContent = `${totalKgBulan.toLocaleString('id-ID')} kg`;
+  if (elRataHarga) elRataHarga.textContent = `Rp ${Math.round(avgHarga).toLocaleString('id-ID')} / kg`;
+  if (elTotalPendapatan) elTotalPendapatan.textContent = `Rp ${totalPendapatan.toLocaleString('id-ID')}`;
 }
 
 /* ==========================================================================
@@ -1389,7 +1444,41 @@ function openModal(id) {
     if (id === 'modal-panen' || id === 'modal-kegiatan') {
       populatePanenAndKegiatanBlokOptions();
     }
+    if (id === 'modal-panen') {
+      populatePembelijSelect();
+    }
     modal.classList.remove('hidden');
+  }
+}
+
+// Populate dropdown pembeli di form tambah panen
+function populatePembelijSelect() {
+  const select = document.getElementById('panen-pembeli');
+  if (!select) return;
+  const daftar = (state.pengaturan.daftarPembeli || ['PT Sawit Jaya']);
+  const curVal = select.value;
+  select.innerHTML = daftar.map(p =>
+    `<option value="${p}" ${p === curVal ? 'selected' : ''}>${p}</option>`
+  ).join('');
+  // Jika ada custom option "Lainnya" di akhir
+  select.innerHTML += `<option value="__custom__">+ Lainnya (ketik manual)...</option>`;
+  if (curVal && !daftar.includes(curVal) && curVal !== '__custom__') {
+    select.value = curVal;
+  } else {
+    select.value = daftar[0] || '';
+  }
+}
+
+function handlePembeliSelectChange(sel) {
+  const customGroup = document.getElementById('panen-pembeli-custom-group');
+  const customInput = document.getElementById('panen-pembeli-custom');
+  if (!customGroup) return;
+  if (sel.value === '__custom__') {
+    customGroup.style.display = '';
+    if (customInput) customInput.required = true;
+  } else {
+    customGroup.style.display = 'none';
+    if (customInput) { customInput.required = false; customInput.value = ''; }
   }
 }
 
@@ -1726,7 +1815,20 @@ async function handleSavePanen(e) {
   const blok = document.getElementById('panen-blok').value;
   const jumlah = parseFloat(document.getElementById('panen-jumlah').value);
   const harga = parseFloat(document.getElementById('panen-harga').value);
-  const pembeli = document.getElementById('panen-pembeli').value;
+
+  // Ambil nilai pembeli dari select atau input custom
+  const pembelijSelect = document.getElementById('panen-pembeli');
+  let pembeli = pembelijSelect ? pembelijSelect.value : '';
+
+  // Jika user pilih "+ Lainnya (ketik manual)..."
+  if (pembeli === '__custom__') {
+    const customInput = document.getElementById('panen-pembeli-custom');
+    pembeli = customInput ? customInput.value.trim() : '';
+    if (!pembeli) {
+      showToast('Nama pembeli tidak boleh kosong!', 'error');
+      return;
+    }
+  }
 
   const payload = { tanggal, blok, jumlah, harga, pembeli, status: 'Selesai' };
   const newPanen = { id: Date.now(), ...payload };
@@ -2280,7 +2382,9 @@ async function handleSaveSettings() {
     harga_tbs: parseFloat(document.getElementById('setting-harga-tbs')?.value) || 2500,
     notif_cuaca: document.getElementById('setting-notif-cuaca')?.checked ? 1 : 0,
     notif_pupuk: document.getElementById('setting-notif-pupuk')?.checked ? 1 : 0,
-    notif_iot: document.getElementById('setting-notif-iot')?.checked ? 1 : 0
+    notif_iot: document.getElementById('setting-notif-iot')?.checked ? 1 : 0,
+    // Preserve daftarPembeli (managed separately via renderPembelijList)
+    daftarPembeli: state.pengaturan.daftarPembeli || ['PT Sawit Jaya']
   };
 
   state.pengaturan = {
@@ -2305,6 +2409,7 @@ async function handleSaveSettings() {
   }
 
   renderSettingsUI();
+  renderPembelijList();
   updateKPIs();
 
   if (saveBtn) {
@@ -2318,6 +2423,159 @@ async function handleSaveSettings() {
   } else {
     showToast('Pengaturan sistem berhasil disimpan (Penyimpanan Lokal)!', 'success');
   }
+}
+
+/* ==========================================================================
+   MANAJEMEN DAFTAR PEMBELI TBS
+   ========================================================================== */
+function renderPembelijList() {
+  const container = document.getElementById('daftar-pembeli-list');
+  if (!container) return;
+
+  const daftar = state.pengaturan.daftarPembeli || ['PT Sawit Jaya'];
+
+  if (daftar.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state-card" style="padding: 20px; text-align:center;">
+        <p class="text-muted" style="font-size:13px;">Belum ada pembeli terdaftar. Tambahkan pembeli pertama di atas.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = daftar.map((nama, idx) => `
+    <div class="pembeli-list-item" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:var(--surface); border-radius:10px; margin-bottom:8px; border:1px solid var(--border-light); gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px; flex:1;">
+        <div style="width:32px; height:32px; border-radius:50%; background:var(--accent-emerald); display:flex; align-items:center; justify-content:center; color:#fff; font-size:13px; font-weight:700; flex-shrink:0;">${idx + 1}</div>
+        <span style="font-weight:600; font-size:14px; color:var(--text-primary);">${nama}</span>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(16,185,129,0.08); color:var(--accent-emerald); border:1px solid rgba(16,185,129,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="editPembeli(${idx})" title="Edit Nama Pembeli">
+          <i data-lucide="edit-3" style="width:13px; height:13px;"></i> Edit
+        </button>
+        <button class="btn btn-sm" style="padding:4px 10px; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); border-radius:8px; cursor:pointer; font-size:12px; display:flex; align-items:center; gap:5px;" onclick="deletePembeli(${idx})" title="Hapus Pembeli">
+          <i data-lucide="trash-2" style="width:13px; height:13px;"></i> Hapus
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function editPembeli(idx) {
+  const daftar = state.pengaturan.daftarPembeli || [];
+  const oldNama = daftar[idx];
+  if (!oldNama) return;
+
+  const newNama = prompt(`Ubah nama perusahaan pembeli TBS:`, oldNama);
+  if (newNama === null) return; // User membukukan cancel
+
+  const trimmed = newNama.trim();
+  if (!trimmed) {
+    showToast('Nama pembeli tidak boleh kosong!', 'error');
+    return;
+  }
+
+  if (trimmed.toLowerCase() !== oldNama.toLowerCase() && daftar.some(p => p.toLowerCase() === trimmed.toLowerCase())) {
+    showToast(`Pembeli "${trimmed}" sudah ada dalam daftar!`, 'error');
+    return;
+  }
+
+  // Update di daftar pembeli
+  state.pengaturan.daftarPembeli[idx] = trimmed;
+
+  // Sinkronkan juga pada transaksi panen yang menggunakan nama lama
+  let updatedCount = 0;
+  state.panenList.forEach(p => {
+    if (p.pembeli === oldNama) {
+      p.pembeli = trimmed;
+      updatedCount++;
+    }
+  });
+
+  localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+  saveLocalState();
+
+  renderPembelijList();
+  renderPanenTable();
+  updatePanenRingkasan();
+
+  if (updatedCount > 0) {
+    showToast(`Pembeli diubah menjadi "${trimmed}" (${updatedCount} transaksi panen diperbarui).`, 'success');
+  } else {
+    showToast(`Nama pembeli berhasil diubah menjadi "${trimmed}".`, 'success');
+  }
+}
+
+async function addPembeli() {
+  const input = document.getElementById('input-tambah-pembeli');
+  const nama = input ? input.value.trim() : '';
+
+  if (!nama) {
+    showToast('Nama pembeli tidak boleh kosong!', 'error');
+    return;
+  }
+
+  if (!Array.isArray(state.pengaturan.daftarPembeli)) {
+    state.pengaturan.daftarPembeli = [];
+  }
+
+  if (state.pengaturan.daftarPembeli.some(p => p.toLowerCase() === nama.toLowerCase())) {
+    showToast(`Pembeli "${nama}" sudah ada dalam daftar!`, 'error');
+    return;
+  }
+
+  state.pengaturan.daftarPembeli.push(nama);
+  localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+
+  if (input) input.value = '';
+
+  renderPembelijList();
+  showToast(`Pembeli "${nama}" berhasil ditambahkan!`, 'success');
+}
+
+async function deletePembeli(idx) {
+  const daftar = state.pengaturan.daftarPembeli || [];
+  const nama = daftar[idx];
+
+  if (!nama) return;
+
+  // Cek apakah pembeli digunakan di data panen
+  const used = state.panenList.some(p => p.pembeli === nama);
+  if (used) {
+    const confirmed = await showConfirmDialog({
+      title: 'Hapus Pembeli?',
+      message: `Pembeli "${nama}" sudah digunakan di beberapa catatan panen. Data panen yang ada tidak akan berubah, namun pembeli ini tidak akan muncul lagi di dropdown. Lanjutkan?`,
+      confirmText: 'Ya, Hapus dari Daftar',
+      cancelText: 'Batal',
+      type: 'warning',
+      icon: 'alert-triangle'
+    });
+    if (!confirmed) return;
+  } else {
+    const confirmed = await showConfirmDialog({
+      title: 'Hapus Pembeli?',
+      message: `Apakah Anda yakin ingin menghapus "${nama}" dari daftar pembeli TBS?`,
+      confirmText: 'Ya, Hapus',
+      cancelText: 'Batal',
+      type: 'danger',
+      icon: 'trash-2'
+    });
+    if (!confirmed) return;
+  }
+
+  state.pengaturan.daftarPembeli.splice(idx, 1);
+
+  // Pastikan selalu ada minimal 1 pembeli
+  if (state.pengaturan.daftarPembeli.length === 0) {
+    state.pengaturan.daftarPembeli = ['PT Sawit Jaya'];
+    showToast('Daftar pembeli tidak boleh kosong. Pembeli default dipulihkan.', 'error');
+  }
+
+  localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
+  renderPembelijList();
+  showToast(`Pembeli "${nama}" telah dihapus dari daftar.`, 'error');
 }
 
 /* ==========================================================================
