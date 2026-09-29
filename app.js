@@ -103,8 +103,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderUserProfile();
   initClock();
   initNavigation();
-  initTables();
   initCharts();
+  initTables();
   initModals();
   initEventListeners();
 
