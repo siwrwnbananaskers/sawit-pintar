@@ -2888,7 +2888,7 @@ async function handleSavePembeli(e) {
   
   const isDuplicate = state.pengaturan.daftarPembeli.some((p, i) => p.nama.toLowerCase() === nama.toLowerCase() && i !== idx);
   if (isDuplicate) {
-    return showToast(\`Pembeli "\${nama}" sudah ada dalam daftar!\`, 'error');
+    return showToast(`Pembeli "${nama}" sudah ada dalam daftar!`, 'error');
   }
   
   const oldNama = idx >= 0 ? state.pengaturan.daftarPembeli[idx].nama : null;
@@ -2918,7 +2918,7 @@ async function handleSavePembeli(e) {
   
   renderPembelijList();
   closeModal('modal-pembeli');
-  showToast(\`Pembeli "\${nama}" berhasil disimpan!\`, 'success');
+  showToast(`Pembeli "${nama}" berhasil disimpan!`, 'success');
   
   syncPengaturanToCloud();
 }
@@ -2935,7 +2935,7 @@ async function deletePembeli(idx) {
   if (used) {
     const confirmed = await showConfirmDialog({
       title: 'Hapus Pembeli?',
-      message: \`Pembeli "\${nama}" sudah digunakan di beberapa catatan panen. Data panen yang ada tidak akan berubah, namun pembeli ini tidak akan muncul lagi di dropdown. Lanjutkan?\`,
+      message: `Pembeli "${nama}" sudah digunakan di beberapa catatan panen. Data panen yang ada tidak akan berubah, namun pembeli ini tidak akan muncul lagi di dropdown. Lanjutkan?`,
       confirmText: 'Ya, Hapus dari Daftar',
       cancelText: 'Batal',
       type: 'warning',
@@ -2945,7 +2945,7 @@ async function deletePembeli(idx) {
   } else {
     const confirmed = await showConfirmDialog({
       title: 'Hapus Pembeli?',
-      message: \`Apakah Anda yakin ingin menghapus "\${nama}" dari daftar pembeli TBS?\`,
+      message: `Apakah Anda yakin ingin menghapus "${nama}" dari daftar pembeli TBS?`,
       confirmText: 'Ya, Hapus',
       cancelText: 'Batal',
       type: 'danger',
@@ -2970,7 +2970,7 @@ async function deletePembeli(idx) {
 
   localStorage.setItem('sawit_pengaturan', JSON.stringify(state.pengaturan));
   renderPembelijList();
-  showToast(\`Pembeli "\${nama}" telah dihapus dari daftar.\`, 'error');
+  showToast(`Pembeli "${nama}" telah dihapus dari daftar.`, 'error');
   
   syncPengaturanToCloud();
 }
