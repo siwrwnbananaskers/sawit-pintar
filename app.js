@@ -220,26 +220,71 @@ async function loadSavedData() {
           ApiService.pengaturan.get()
         ]);
 
+        // 1. Data Lahan Sync
         if (dbLahan && Array.isArray(dbLahan)) {
           const cleanLahan = dbLahan.filter(l => !isMockRecord(l));
-          if (cleanLahan.length > 0) state.lahanList = cleanLahan;
+          if (cleanLahan.length > 0) {
+            state.lahanList = cleanLahan;
+          } else if (state.lahanList.length > 0) {
+            // Upload local lahan list to D1 database if D1 is empty!
+            for (const item of state.lahanList) {
+              await ApiService.lahan.create({
+                nama: item.nama,
+                lokasi: item.lokasi,
+                luas: item.luas,
+                pohon: item.pohon,
+                varietas: item.varietas,
+                mandor: item.mandor || '',
+                status: item.status || 'Produktif'
+              });
+            }
+            console.log('Successfully synced local lahan list to Cloudflare D1');
+          }
         }
+
+        // 2. Pekerja Sync
         if (dbPekerja && Array.isArray(dbPekerja)) {
           const cleanPekerja = dbPekerja.filter(p => !isMockRecord(p) || p.posisi === 'Estate Manager');
-          if (cleanPekerja.length > 0) state.pekerjaList = cleanPekerja;
+          if (cleanPekerja.length > 0) {
+            state.pekerjaList = cleanPekerja;
+          } else if (state.pekerjaList.length > 0) {
+            for (const p of state.pekerjaList) {
+              await ApiService.pekerja.save(p);
+            }
+          }
         }
+
+        // 3. Kegiatan Sync
         if (dbKegiatan && Array.isArray(dbKegiatan)) {
           const cleanKegiatan = dbKegiatan.filter(k => !isMockRecord(k));
-          state.kegiatanList = cleanKegiatan;
+          if (cleanKegiatan.length > 0) {
+            state.kegiatanList = cleanKegiatan;
+          } else if (state.kegiatanList.length > 0) {
+            for (const k of state.kegiatanList) {
+              await ApiService.kegiatan.create(k);
+            }
+          }
         }
+
+        // 4. Panen Sync
         if (dbPanen && Array.isArray(dbPanen)) {
           const cleanPanen = dbPanen.filter(p => !isMockRecord(p));
-          state.panenList = cleanPanen;
+          if (cleanPanen.length > 0) {
+            state.panenList = cleanPanen;
+          } else if (state.panenList.length > 0) {
+            for (const p of state.panenList) {
+              await ApiService.panen.create(p);
+            }
+          }
         }
+
+        // 5. Cuaca Sync
         if (dbCuaca && Array.isArray(dbCuaca)) {
           const cleanCuaca = dbCuaca.filter(c => !isMockRecord(c));
-          state.cuacaList = cleanCuaca;
+          if (cleanCuaca.length > 0) state.cuacaList = cleanCuaca;
         }
+
+        // 6. Pengaturan Sync
         if (dbPengaturan) {
           state.pengaturan = {
             ...state.pengaturan,
@@ -1455,16 +1500,23 @@ function populatePanenAndKegiatanBlokOptions() {
   const kegiatanSelect = document.getElementById('kegiatan-blok');
 
   const blocks = state.lahanList.length > 0 
-    ? state.lahanList.map(l => l.nama.split(' - ')[0]) 
-    : ['Blok A', 'Blok B', 'Blok C', 'Blok D'];
+    ? state.lahanList.map(l => l.nama) 
+    : [];
 
-  if (panenSelect && panenSelect.children.length !== blocks.length) {
+  if (blocks.length === 0) {
+    const emptyOpt = '<option value="">-- Belum ada lahan terdaftar --</option>';
+    if (panenSelect) panenSelect.innerHTML = emptyOpt;
+    if (kegiatanSelect) kegiatanSelect.innerHTML = emptyOpt;
+    return;
+  }
+
+  if (panenSelect) {
     const curVal = panenSelect.value;
     panenSelect.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join('');
     if (blocks.includes(curVal)) panenSelect.value = curVal;
   }
 
-  if (kegiatanSelect && kegiatanSelect.children.length !== blocks.length) {
+  if (kegiatanSelect) {
     const curVal = kegiatanSelect.value;
     kegiatanSelect.innerHTML = blocks.map(b => `<option value="${b}">${b}</option>`).join('');
     if (blocks.includes(curVal)) kegiatanSelect.value = curVal;
@@ -1555,25 +1607,40 @@ async function handleSaveLahan(e) {
 
   const payload = { nama, lokasi, luas, pohon, varietas, mandor, status };
 
+  let dbSuccess = false;
+
   if (id) {
     const item = state.lahanList.find(x => x.id === parseInt(id));
     if (item) {
       Object.assign(item, payload);
     }
-    if (window.ApiService && ApiService.isOnline()) {
-      ApiService.lahan.update(id, payload);
+    if (window.ApiService) {
+      try {
+        const res = await ApiService.lahan.update(id, payload);
+        if (res && res.success) dbSuccess = true;
+      } catch (err) {
+        console.warn('Gagal sync update lahan ke Cloudflare D1', err);
+      }
     }
-    showToast(`Data lahan ${nama} berhasil diperbarui`);
+    showToast(`Data lahan ${nama} berhasil diperbarui ${dbSuccess ? '& disinkronkan ke D1' : ''}`);
   } else {
     const newLahan = {
       id: Date.now(),
       ...payload
     };
     state.lahanList.push(newLahan);
-    if (window.ApiService && ApiService.isOnline()) {
-      ApiService.lahan.create(payload);
+    if (window.ApiService) {
+      try {
+        const res = await ApiService.lahan.create(payload);
+        if (res && res.success) {
+          dbSuccess = true;
+          if (res.id) newLahan.id = res.id;
+        }
+      } catch (err) {
+        console.warn('Gagal sync create lahan ke Cloudflare D1', err);
+      }
     }
-    showToast(`Lahan baru ${nama} berhasil ditambahkan`);
+    showToast(`Lahan baru ${nama} berhasil ditambahkan ${dbSuccess ? '& disinkronkan ke Cloudflare D1' : ''}`, 'success');
   }
 
   if (mandor) {
