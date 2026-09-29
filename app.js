@@ -2521,7 +2521,8 @@ async function syncWeatherData() {
   // Sync to Cloudflare D1 Backend if API configured
   const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
   if (api && api.getBaseUrl()) {
-    for (const item of newItemsToPush) {
+    const itemsToSync = newItemsToPush.length > 0 ? newItemsToPush : state.cuacaList;
+    for (const item of itemsToSync) {
       try {
         await api.cuaca.create({
           tanggal: item.tanggal,
@@ -2530,7 +2531,7 @@ async function syncWeatherData() {
           kelembaban: item.kelembaban,
           curah: item.curah,
           kondisi: item.kondisi,
-          lokasi: item.lokasi
+          lokasi: item.lokasi || loc.name
         });
       } catch (e) {
         console.warn('Error syncing cuaca item to Cloudflare D1', e);
