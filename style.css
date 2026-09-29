@@ -2766,6 +2766,19 @@ input:checked + .slider:before {
   pointer-events: none;
 }
 
+/* Instantly suppress login screen on page refresh if user is already authenticated (eliminates flash of login) */
+html.is-authenticated .login-screen-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+
+html.is-authenticated .app-container {
+  pointer-events: auto !important;
+}
+
 .login-card-container {
   width: 100%;
   max-width: 390px;

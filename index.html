@@ -16,6 +16,23 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Anti-Flash Auth Guard (runs before DOM paint to prevent login screen flicker on refresh) -->
+  <script>
+    (function() {
+      try {
+        var s = sessionStorage.getItem('sawit_auth_session') || localStorage.getItem('sawit_auth_session');
+        if (s) {
+          var session = JSON.parse(s);
+          if (session && session.token) {
+            var createdAt = session.createdAt ? new Date(session.createdAt).getTime() : 0;
+            if (!createdAt || (Date.now() - createdAt < 86400000)) {
+              document.documentElement.classList.add('is-authenticated');
+            }
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>

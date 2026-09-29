@@ -2780,9 +2780,11 @@ function updateAuthUI() {
   const appContainer = document.querySelector('.app-container');
 
   if (state.isAuthenticated) {
+    document.documentElement.classList.add('is-authenticated');
     if (loginOverlay) loginOverlay.classList.add('overlay-hidden');
     if (appContainer) appContainer.style.pointerEvents = '';
   } else {
+    document.documentElement.classList.remove('is-authenticated');
     if (loginOverlay) loginOverlay.classList.remove('overlay-hidden');
     if (appContainer) appContainer.style.pointerEvents = 'none';
     // Focus username field
