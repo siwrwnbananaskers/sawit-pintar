@@ -439,7 +439,7 @@ body {
   background: rgba(18, 38, 25, 0.5);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  z-index: -1;
+  z-index: 140;
   animation: fadeIn 0.2s ease-out;
   cursor: default;
 }
@@ -461,6 +461,7 @@ body {
   color: var(--text-muted);
   transition: var(--transition);
   position: relative;
+  z-index: 150;
 }
 
 .btn-icon:hover {
