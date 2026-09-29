@@ -461,6 +461,10 @@ body {
   color: var(--text-muted);
   transition: var(--transition);
   position: relative;
+}
+
+#btn-notifications {
+  position: relative;
   z-index: 150;
 }
 
