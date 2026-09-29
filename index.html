@@ -223,35 +223,15 @@
           <div class="notification-wrapper">
             <button class="btn-icon btn-has-badge" id="btn-notifications" aria-label="Notifikasi">
               <i data-lucide="bell"></i>
-              <span class="badge-count">3</span>
+              <span class="badge-count" id="notif-badge-count">0</span>
             </button>
             <div class="notification-dropdown hidden" id="notification-dropdown">
               <div class="dropdown-header">
                 <h6>Notifikasi Perkebunan</h6>
-                <button class="text-btn">Tandai Dibaca</button>
+                <button class="text-btn" id="btn-mark-all-read" onclick="markAllNotificationsRead()">Tandai Dibaca</button>
               </div>
-              <ul class="notification-list">
-                <li class="unread">
-                  <div class="notif-icon green"><i data-lucide="check-circle-2"></i></div>
-                  <div class="notif-text">
-                    <p><strong>Panen Blok B selesai</strong> (2.400 kg)</p>
-                    <span>15 menit yang lalu</span>
-                  </div>
-                </li>
-                <li class="unread">
-                  <div class="notif-icon yellow"><i data-lucide="cloud-rain"></i></div>
-                  <div class="notif-text">
-                    <p><strong>Peringatan Hujan</strong>: Curah hujan 45 mm</p>
-                    <span>1 jam yang lalu</span>
-                  </div>
-                </li>
-                <li>
-                  <div class="notif-icon blue"><i data-lucide="calendar"></i></div>
-                  <div class="notif-text">
-                    <p>Jadwal Pemupukan NPK Blok C besok pagi</p>
-                    <span>3 jam yang lalu</span>
-                  </div>
-                </li>
+              <ul class="notification-list" id="notification-list-container">
+                <!-- Diisi dinamis secara Realtime dari data panen, cuaca, & kegiatan real oleh JS -->
               </ul>
             </div>
           </div>

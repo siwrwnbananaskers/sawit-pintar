@@ -86,7 +86,9 @@ const state = {
   },
 
   // Tahun laporan panen (dinamis dari catatan panen user)
-  laporanSelectedYear: new Date().getFullYear()
+  laporanSelectedYear: new Date().getFullYear(),
+  // Dynamic Realtime Notifications
+  notifications: []
 };
 
 // Chart instances store
@@ -522,6 +524,7 @@ function initTables() {
   renderPembelijList();
   renderKegiatanBlokFilter();
   updateKPIs();
+  generateRealtimeNotifications();
 }
 
 // 1. Data Lahan Table (With Mandor Relation & Detail Popover)
@@ -1700,6 +1703,7 @@ async function handleSaveLahan(e) {
   renderKegiatanBlokFilter();
   updateDashboardBlokChart();
   updateKPIs();
+  generateRealtimeNotifications();
   closeModal('modal-lahan');
 }
 
@@ -1914,6 +1918,7 @@ async function handleSaveKegiatan(e) {
   saveLocalState();
   renderKegiatanTable();
   renderDashboardActivities();
+  generateRealtimeNotifications();
   closeModal('modal-kegiatan');
   showToast('Catatan kegiatan berhasil disimpan');
 }
@@ -1990,6 +1995,7 @@ async function handleSavePanen(e) {
   updateDashboardBlokChart();
   updatePanenBulananChart();
   updateKPIs();
+  generateRealtimeNotifications();
   closeModal('modal-panen');
   showToast('Data panen berhasil disimpan');
 }
@@ -2224,9 +2230,140 @@ async function clearAllCuaca() {
     updateWeatherUI(null);
     updateWeatherChart();
     renderCuacaTable();
+    generateRealtimeNotifications();
 
     showToast('Seluruh data cuaca telah berhasil dihapus!', 'error');
   }
+}
+
+/* ==========================================================================
+   SYSTEM REALTIME NOTIFICATIONS SYSTEM
+   ========================================================================== */
+function generateRealtimeNotifications() {
+  const notifs = [];
+
+  // 1. Transaction Panen Real Terakhir
+  if (state.panenList && state.panenList.length > 0) {
+    const latestPanen = state.panenList[0];
+    const kgFormatted = Number(latestPanen.jumlah || 0).toLocaleString('id-ID');
+    notifs.push({
+      id: `panen_${latestPanen.id || Date.now()}`,
+      title: `Panen ${latestPanen.blok} Selesai`,
+      detail: `${kgFormatted} kg (${latestPanen.pembeli || 'Pembeli TBS'})`,
+      time: formatTanggal(latestPanen.tanggal) || 'Hari Ini',
+      icon: 'check-circle-2',
+      color: 'green'
+    });
+  }
+
+  // 2. Monitoring Cuaca Realtime / Peringatan
+  if (state.cuacaList && state.cuacaList.length > 0) {
+    const c = state.cuacaList[0];
+    if (c.curah > 15 || (c.kondisi && (c.kondisi.toLowerCase().includes('hujan') || c.kondisi.toLowerCase().includes('badai')))) {
+      notifs.push({
+        id: `cuaca_${c.id || Date.now()}`,
+        title: `Peringatan Cuaca (${c.kondisi})`,
+        detail: `Curah Hujan ${c.curah} mm, Suhu ${c.suhu}°C`,
+        time: c.jam ? `Jam ${c.jam}` : 'Hari Ini',
+        icon: 'cloud-rain',
+        color: 'yellow'
+      });
+    } else {
+      notifs.push({
+        id: `cuaca_${c.id || Date.now()}`,
+        title: `Stasiun Telemetry Cuaca`,
+        detail: `${c.kondisi}, ${c.suhu}°C (${c.lokasi || 'Stasiun Kebun'})`,
+        time: 'Terkoneksi IoT',
+        icon: 'cloud-sun',
+        color: 'blue'
+      });
+    }
+  }
+
+  // 3. Catatan Kegiatan Agronomi Real Terakhir
+  if (state.kegiatanList && state.kegiatanList.length > 0) {
+    const k = state.kegiatanList[0];
+    notifs.push({
+      id: `kegiatan_${k.id || Date.now()}`,
+      title: `Kegiatan ${k.jenis} (${k.blok})`,
+      detail: `${k.deskripsi} - Petugas: ${k.petugas}`,
+      time: formatTanggal(k.tanggal) || 'Hari Ini',
+      icon: 'calendar',
+      color: 'blue'
+    });
+  }
+
+  // 4. Status Lahan Real
+  if (state.lahanList && state.lahanList.length > 0) {
+    const totalLuas = state.lahanList.reduce((acc, curr) => acc + (Number(curr.luas) || 0), 0);
+    notifs.push({
+      id: 'lahan_stat',
+      title: `Inventaris Lahan Perkebunan`,
+      detail: `${state.lahanList.length} Blok Terdaftar (${totalLuas} Ha Total)`,
+      time: 'Status Aktif',
+      icon: 'map-pin',
+      color: 'green'
+    });
+  }
+
+  state.notifications = notifs;
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const container = document.getElementById('notification-list-container');
+  const badgeCount = document.getElementById('notif-badge-count');
+  if (!container) return;
+
+  const notifs = state.notifications || [];
+  const readState = JSON.parse(localStorage.getItem('sawit_notif_read_ids') || '[]');
+
+  if (notifs.length === 0) {
+    container.innerHTML = `
+      <li style="padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px;">
+        Belum ada notifikasi perkebunan saat ini.
+      </li>
+    `;
+    if (badgeCount) badgeCount.style.display = 'none';
+    return;
+  }
+
+  let unreadCount = 0;
+
+  container.innerHTML = notifs.map(n => {
+    const isRead = readState.includes(n.id);
+    if (!isRead) unreadCount++;
+
+    return `
+      <li class="${isRead ? '' : 'unread'}">
+        <div class="notif-icon ${n.color || 'green'}"><i data-lucide="${n.icon || 'bell'}"></i></div>
+        <div class="notif-text">
+          <p><strong>${n.title}</strong>: ${n.detail}</p>
+          <span>${n.time}</span>
+        </div>
+      </li>
+    `;
+  }).join('');
+
+  if (badgeCount) {
+    if (unreadCount > 0) {
+      badgeCount.style.display = 'inline-flex';
+      badgeCount.textContent = unreadCount;
+    } else {
+      badgeCount.style.display = 'none';
+    }
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function markAllNotificationsRead() {
+  const notifs = state.notifications || [];
+  const readIds = notifs.map(n => n.id);
+
+  localStorage.setItem('sawit_notif_read_ids', JSON.stringify(readIds));
+  renderNotifications();
+  showToast('Seluruh notifikasi telah ditandai dibaca.', 'success');
 }
 
 async function syncWeatherData() {
@@ -2376,6 +2513,7 @@ async function syncWeatherData() {
   }
   renderCuacaTable();
   updateWeatherChart();
+  generateRealtimeNotifications();
 
   if (syncBtn) {
     syncBtn.disabled = false;
