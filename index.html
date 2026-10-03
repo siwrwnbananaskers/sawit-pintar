@@ -1048,17 +1048,21 @@
               <div class="card-body">
                 <!-- Form tambah pembeli -->
                 <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items: flex-end;">
-                  <div style="flex: 2; min-width: 200px;">
+                  <div style="flex: 2; min-width: 180px;">
                     <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Nama Perusahaan Pembeli</label>
                     <input type="text" id="input-tambah-pembeli" class="form-control" placeholder="Contoh: PT Palma Jaya">
                   </div>
-                  <div style="flex: 1; min-width: 110px;">
-                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Grade A (Rp)</label>
-                    <input type="number" id="input-tambah-grade-a" class="form-control" placeholder="2600" value="2600">
+                  <div style="flex: 1; min-width: 100px;">
+                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Standar (Rp)</label>
+                    <input type="number" id="input-tambah-standar" class="form-control" placeholder="2600" value="2600">
                   </div>
-                  <div style="flex: 1; min-width: 110px;">
+                  <div style="flex: 1; min-width: 100px;">
+                    <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Grade A (Rp)</label>
+                    <input type="number" id="input-tambah-grade-a" class="form-control" placeholder="2800" value="2800">
+                  </div>
+                  <div style="flex: 1; min-width: 100px;">
                     <label style="font-size: 12px; margin-bottom: 4px; display: block; color: var(--text-secondary);">Harga Grade B (Rp)</label>
-                    <input type="number" id="input-tambah-grade-b" class="form-control" placeholder="2400" value="2400">
+                    <input type="number" id="input-tambah-grade-b" class="form-control" placeholder="1700" value="1700">
                   </div>
                   <button type="button" class="btn btn-primary" onclick="addPembeli()" style="white-space:nowrap; flex-shrink:0; height: 42px;">
                     <i data-lucide="plus"></i> Tambah Pembeli
@@ -1139,6 +1143,10 @@
             <input type="text" id="edit-pembeli-nama" class="form-control" required>
           </div>
           <div class="form-row">
+            <div class="form-group">
+              <label>Harga Standar (Rp/kg)</label>
+              <input type="number" id="edit-pembeli-standar" class="form-control" required>
+            </div>
             <div class="form-group">
               <label>Harga Grade A (Rp/kg)</label>
               <input type="number" id="edit-pembeli-grade-a" class="form-control" required>
@@ -1330,15 +1338,42 @@
             <small class="text-muted" style="font-size:11px; margin-top:4px; display:block;">Anda bisa tambahkan pembeli ini ke daftar permanen di halaman Pengaturan.</small>
           </div>
 
-          <div class="form-row" style="margin-top: 15px;">
+          <!-- Pilihan Mode Penjualan: Tanpa Grade vs Berdasarkan Grade -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label style="font-weight:600; display:block; margin-bottom:8px; font-size:13px;">Pilihan Sistem Penjualan TBS</label>
+            <div class="panen-mode-selector">
+              <button type="button" id="btn-mode-flat" class="panen-mode-btn active" onclick="setPanenMode('flat')">
+                <i data-lucide="scale" style="width:15px; height:15px;"></i> Tanpa Grade (Satu Harga)
+              </button>
+              <button type="button" id="btn-mode-grade" class="panen-mode-btn" onclick="setPanenMode('grade')">
+                <i data-lucide="layers" style="width:15px; height:15px;"></i> Berdasarkan Grade (A / B)
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode 1: Tanpa Grade (Satu Harga / Flat Campuran) -->
+          <div id="panen-group-flat" class="form-row">
+            <div class="form-group">
+              <label>Jumlah Total TBS (kg) <span class="required">*</span></label>
+              <input type="number" id="panen-jumlah-flat" class="form-control" placeholder="0" min="0" step="any" oninput="calculateTotalPanen()">
+            </div>
+            <div class="form-group">
+              <label>Harga Satuan (Rp/kg) <span class="required">*</span></label>
+              <input type="number" id="panen-harga-flat" class="form-control" placeholder="2600" min="0" oninput="calculateTotalPanen()">
+              <small id="panen-harga-flat-hint" class="text-muted" style="display:block; margin-top:4px; font-size:11.5px; color:var(--primary-green); font-weight:600;">*Harga acuan pembeli (bisa diedit jika harga hari ini berubah)</small>
+            </div>
+          </div>
+
+          <!-- Mode 2: Berdasarkan Grade A & Grade B -->
+          <div id="panen-group-grade" class="form-row" style="display:none;">
             <div class="form-group">
               <label>Jumlah Grade A (kg)</label>
-              <input type="number" id="panen-jumlah-a" class="form-control" placeholder="0" oninput="calculateTotalPanen()">
+              <input type="number" id="panen-jumlah-a" class="form-control" placeholder="0" min="0" step="any" oninput="calculateTotalPanen()">
               <small id="panen-harga-a-text" class="text-muted" style="display:block; margin-top:4px; font-size:12px; font-weight:600; color:var(--primary-green);">Rp 0/kg</small>
             </div>
             <div class="form-group">
               <label>Jumlah Grade B (kg)</label>
-              <input type="number" id="panen-jumlah-b" class="form-control" placeholder="0" oninput="calculateTotalPanen()">
+              <input type="number" id="panen-jumlah-b" class="form-control" placeholder="0" min="0" step="any" oninput="calculateTotalPanen()">
               <small id="panen-harga-b-text" class="text-muted" style="display:block; margin-top:4px; font-size:12px; font-weight:600; color:var(--primary-green);">Rp 0/kg</small>
             </div>
           </div>

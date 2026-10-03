@@ -179,6 +179,10 @@ const ApiService = (() => {
     return await request(`/api/panen/${id}`, { method: 'DELETE' });
   }
 
+  async function clearAllPanen() {
+    return await request('/api/panen', { method: 'DELETE' });
+  }
+
   // 5. Cuaca
   async function getCuaca() {
     const res = await request('/api/cuaca');
@@ -228,7 +232,7 @@ const ApiService = (() => {
     lahan: { get: getLahan, create: createLahan, update: updateLahan, delete: deleteLahan },
     pekerja: { get: getPekerja, save: savePekerja, delete: deletePekerja },
     kegiatan: { get: getKegiatan, create: createKegiatan, delete: deleteKegiatan },
-    panen: { get: getPanen, create: createPanen, delete: deletePanen },
+    panen: { get: getPanen, create: createPanen, delete: deletePanen, clearAll: clearAllPanen },
     cuaca: { get: getCuaca, create: createCuaca, delete: deleteCuaca, clearAll: clearAllCuaca },
     laporan: { get: getLaporan },
     pengaturan: { get: getPengaturan, save: savePengaturan }

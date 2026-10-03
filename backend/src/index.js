@@ -204,10 +204,19 @@ export default {
 
           return jsonResponse({ success: true, id: res.meta.last_row_id, message: 'Panen berhasil dicatat' }, 201, corsHeaders);
         }
+
+        if (method === 'DELETE') {
+          await db.prepare('DELETE FROM panen').run();
+          return jsonResponse({ success: true, message: 'Seluruh data panen berhasil dikosongkan' }, 200, corsHeaders);
+        }
       }
 
       if (path.startsWith('/api/panen/') && method === 'DELETE') {
         const id = path.split('/')[3];
+        if (id === 'all') {
+          await db.prepare('DELETE FROM panen').run();
+          return jsonResponse({ success: true, message: 'Seluruh data panen berhasil dikosongkan' }, 200, corsHeaders);
+        }
         await db.prepare('DELETE FROM panen WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true, message: 'Data panen berhasil dihapus' }, 200, corsHeaders);
       }
@@ -280,17 +289,17 @@ export default {
               notif_cuaca: 1,
               notif_pupuk: 1,
               notif_iot: 1,
-              daftarPembeli: ['PT Sawit Jaya']
+              daftarPembeli: [{ nama: 'LAPAK - SONY', hargaStandar: 2600, gradeA: 2800, gradeB: 1700 }]
             };
           } else {
             if (settings.daftar_pembeli) {
               try {
                 settings.daftarPembeli = JSON.parse(settings.daftar_pembeli);
               } catch (e) {
-                settings.daftarPembeli = ['PT Sawit Jaya'];
+                settings.daftarPembeli = [{ nama: 'LAPAK - SONY', hargaStandar: 2600, gradeA: 2800, gradeB: 1700 }];
               }
             } else {
-              settings.daftarPembeli = ['PT Sawit Jaya'];
+              settings.daftarPembeli = [{ nama: 'LAPAK - SONY', hargaStandar: 2600, gradeA: 2800, gradeB: 1700 }];
             }
           }
           return jsonResponse({ success: true, data: settings }, 200, corsHeaders);
