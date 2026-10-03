@@ -196,6 +196,10 @@ const ApiService = (() => {
     return await request(`/api/cuaca/${id}`, { method: 'DELETE' });
   }
 
+  async function clearAllCuaca() {
+    return await request('/api/cuaca', { method: 'DELETE' });
+  }
+
   // 6. Laporan Tahunan
   async function getLaporan(tahun = '2023') {
     const res = await request(`/api/laporan?tahun=${tahun}`);
@@ -220,11 +224,12 @@ const ApiService = (() => {
     getBaseUrl,
     checkConnection,
     isOnline: () => isConnectedToCloud,
+    request,
     lahan: { get: getLahan, create: createLahan, update: updateLahan, delete: deleteLahan },
     pekerja: { get: getPekerja, save: savePekerja, delete: deletePekerja },
     kegiatan: { get: getKegiatan, create: createKegiatan, delete: deleteKegiatan },
     panen: { get: getPanen, create: createPanen, delete: deletePanen },
-    cuaca: { get: getCuaca, create: createCuaca, delete: deleteCuaca },
+    cuaca: { get: getCuaca, create: createCuaca, delete: deleteCuaca, clearAll: clearAllCuaca },
     laporan: { get: getLaporan },
     pengaturan: { get: getPengaturan, save: savePengaturan }
   };

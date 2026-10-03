@@ -2264,15 +2264,31 @@ async function deleteCuaca(id) {
   });
 
   if (confirmed) {
+    const deletedItem = item;
     state.cuacaList = state.cuacaList.filter(x => x.id !== id);
 
     if (window.ApiService && ApiService.isOnline()) {
-      ApiService.cuaca.delete(id);
+      try {
+        if (id && Number(id) < 10000000000) {
+          await ApiService.cuaca.delete(id);
+        } else if (deletedItem) {
+          const dbRows = await ApiService.cuaca.get();
+          if (dbRows && Array.isArray(dbRows)) {
+            const match = dbRows.find(r => r.tanggal === deletedItem.tanggal && (r.jam || '') === (deletedItem.jam || ''));
+            if (match && match.id) {
+              await ApiService.cuaca.delete(match.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal sync hapus data cuaca ke Cloudflare D1:', err);
+      }
     }
 
     saveLocalState();
     renderCuacaTable();
     if (state.cuacaList.length > 0) updateWeatherUI(state.cuacaList[0]);
+    else updateWeatherUI(null);
     updateWeatherChart();
     showToast('Data cuaca telah dihapus', 'error');
   }
@@ -2400,31 +2416,42 @@ async function clearAllCuaca() {
   });
 
   if (confirmed) {
-    const itemsToDelete = [...state.cuacaList];
     state.cuacaList = [];
     saveLocalState();
 
-    // Delete from Cloudflare D1 Backend if online
-    const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
-    if (api && api.isOnline()) {
-      for (const item of itemsToDelete) {
-        if (item.id) {
-          try {
-            await api.cuaca.delete(item.id);
-          } catch (e) {
-            console.warn('Cloud sync error deleting cuaca item', e);
-          }
-        }
-      }
-    }
-
-    // Reset UI components to empty state
+    // Reset UI components to empty state immediately
     updateWeatherUI(null);
     updateWeatherChart();
     renderCuacaTable();
     generateRealtimeNotifications();
 
-    showToast('Seluruh data cuaca telah berhasil dihapus!', 'error');
+    // Delete from Cloudflare D1 Backend if online
+    const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
+    if (api && api.isOnline()) {
+      try {
+        if (api.cuaca && typeof api.cuaca.clearAll === 'function') {
+          await api.cuaca.clearAll();
+        }
+      } catch (e) {
+        console.warn('Direct bulk delete note:', e);
+      }
+
+      // Query real IDs from D1 and delete each one to ensure 100% deletion even on currently deployed worker
+      try {
+        const dbRows = await api.cuaca.get();
+        if (dbRows && Array.isArray(dbRows) && dbRows.length > 0) {
+          for (const row of dbRows) {
+            if (row.id) {
+              await api.cuaca.delete(row.id);
+            }
+          }
+        }
+      } catch (e2) {
+        console.warn('Iterative D1 deletion note:', e2);
+      }
+    }
+
+    showToast('Seluruh data cuaca telah berhasil dihapus secara permanen!', 'error');
   }
 }
 
@@ -2756,7 +2783,7 @@ async function syncWeatherData() {
   if (api && api.getBaseUrl()) {
     for (const item of itemsToSync) {
       try {
-        await api.cuaca.create({
+        const res = await api.cuaca.create({
           tanggal: item.tanggal,
           jam: item.jam,
           suhu: item.suhu,
@@ -2765,10 +2792,14 @@ async function syncWeatherData() {
           kondisi: item.kondisi,
           lokasi: item.lokasi || loc.name
         });
+        if (res && res.id) {
+          item.id = res.id;
+        }
       } catch (e) {
         console.warn('Error syncing cuaca item to Cloudflare D1', e);
       }
     }
+    saveLocalState();
   }
 
   // Ensure filter-cuaca-bulan shows the newly synced data

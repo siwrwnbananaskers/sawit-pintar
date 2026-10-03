@@ -238,10 +238,18 @@ export default {
 
           return jsonResponse({ success: true, id: res.meta.last_row_id, message: 'Data cuaca berhasil dicatat' }, 201, corsHeaders);
         }
+        if (method === 'DELETE') {
+          await db.prepare('DELETE FROM cuaca').run();
+          return jsonResponse({ success: true, message: 'Seluruh data cuaca berhasil dikosongkan' }, 200, corsHeaders);
+        }
       }
 
       if (path.startsWith('/api/cuaca/') && method === 'DELETE') {
         const id = path.split('/')[3];
+        if (id === 'all') {
+          await db.prepare('DELETE FROM cuaca').run();
+          return jsonResponse({ success: true, message: 'Seluruh data cuaca berhasil dikosongkan' }, 200, corsHeaders);
+        }
         await db.prepare('DELETE FROM cuaca WHERE id = ?').bind(id).run();
         return jsonResponse({ success: true, message: 'Data cuaca berhasil dihapus' }, 200, corsHeaders);
       }
