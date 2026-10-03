@@ -148,9 +148,21 @@
             </a>
           </li>
           <li>
+            <a href="#kalkulator-pupuk" class="nav-item" data-view="kalkulator-pupuk" id="nav-kalkulator-pupuk">
+              <i data-lucide="flask-conical"></i>
+              <span>Kalkulator Pupuk</span>
+            </a>
+          </li>
+          <li>
             <a href="#hasil-panen" class="nav-item" data-view="hasil-panen" id="nav-hasil-panen">
               <i data-lucide="archive"></i>
               <span>Hasil Panen</span>
+            </a>
+          </li>
+          <li>
+            <a href="#keuangan" class="nav-item" data-view="keuangan" id="nav-keuangan">
+              <i data-lucide="wallet"></i>
+              <span>Keuangan & Laba</span>
             </a>
           </li>
           <li>
@@ -562,7 +574,132 @@
         </section>
 
         <!-- ============================================ -->
-        <!-- VIEW 4: HASIL PANEN -->
+        <!-- VIEW 4: KALKULATOR PUPUK & AGRONOMI CERDAS -->
+        <!-- ============================================ -->
+        <section id="view-kalkulator-pupuk" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Kalkulator Pupuk & Agronomi Cerdas</h1>
+              <p class="page-subtitle">Rekomendasi pemupukan presisi berbasis standar PPKS untuk maksimalkan produktivitas TBS</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" id="btn-print-pupuk" onclick="window.print()">
+                <i data-lucide="printer"></i> Cetak Lembar Rekomendasi
+              </button>
+            </div>
+          </div>
+
+          <!-- Parameter Card -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title"><i data-lucide="sliders" style="color:var(--primary-green); vertical-align:middle;"></i> Parameter Kebun & Tanaman</h3>
+                <p class="card-subtitle">Pilih blok kebun atau tentukan populasi pohon untuk menghitung dosis dan sak pupuk</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Pilih Blok Lahan Terdaftar</label>
+                  <select id="calc-pilih-blok" class="form-control" onchange="handleCalcBlokChange()">
+                    <!-- Diisi otomatis dari lahanList -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Luas Lahan (Hektar) <span class="required">*</span></label>
+                  <input type="number" id="calc-luas" class="form-control" value="20" step="0.1" min="0.1" oninput="calculatePupukDose()">
+                </div>
+                <div class="form-group">
+                  <label>Jumlah Pohon Kelapa Sawit <span class="required">*</span></label>
+                  <input type="number" id="calc-pohon" class="form-control" value="2800" min="1" oninput="calculatePupukDose()">
+                  <small id="calc-densitas-text" class="text-muted" style="font-size:11px; margin-top:3px; display:block;">Kerapatan: 140 pohon / Ha</small>
+                </div>
+                <div class="form-group">
+                  <label>Fase & Umur Tanaman <span class="required">*</span></label>
+                  <select id="calc-fase" class="form-control" onchange="calculatePupukDose()">
+                    <option value="tm_muda">TM Muda (4 - 8 Tahun) - Fase Pembentukan Buah Awal</option>
+                    <option value="tm_prima" selected>TM Prima / Puncak (9 - 14 Tahun) - Produktivitas Maksimal</option>
+                    <option value="tm_tua">TM Tua (> 15 Tahun) - Pemeliharaan & Efisiensi</option>
+                    <option value="tbm_1">TBM 1 (0 - 1 Tahun) - Fase Bibitan Lapangan</option>
+                    <option value="tbm_2">TBM 2 (1 - 2 Tahun) - Fase Vegetatif Aktif</option>
+                    <option value="tbm_3">TBM 3 (2 - 3 Tahun) - Menjelang Menghasilkan</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Tipologi Tanah</label>
+                  <select id="calc-tanah" class="form-control" onchange="calculatePupukDose()">
+                    <option value="mineral" selected>Tanah Mineral (Lempung / Pasir Berlempung)</option>
+                    <option value="gambut">Tanah Gambut / Organik (Perlu Tambahan Cu, Zn & Borat)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Siklus Rotasi Aplikasi</label>
+                  <select id="calc-aplikasi" class="form-control" onchange="calculatePupukDose()">
+                    <option value="semester" selected>Semester (2 Kali Aplikasi / Tahun - Standar)</option>
+                    <option value="tahunan">Total Kebutuhan 1 Tahun Penuh</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Results: 5 Macro & Micro Nutrients Cards -->
+          <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title"><i data-lucide="flask-conical" style="color:var(--primary-green); vertical-align:middle;"></i> Hasil Rekomendasi Kebutuhan Pupuk Blok</h3>
+                <p class="card-subtitle" id="calc-result-subtitle">Dihitung otomatis berdasarkan standar agronomi PPKS</p>
+              </div>
+              <span class="badge badge-soft-green" id="calc-summary-badge">Total: 0 Sak Pupuk</span>
+            </div>
+            <div class="card-body">
+              <div class="pupuk-grid" id="pupuk-results-grid">
+                <!-- Diisi otomatis oleh JavaScript -->
+              </div>
+
+              <!-- Estimated Budget & Weather Advisory -->
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:20px;">
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:18px;">
+                  <h4 style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                    <i data-lucide="banknote" style="color:var(--primary-green); width:18px; height:18px;"></i> Estimasi Anggaran Pupuk
+                  </h4>
+                  <p style="font-size:12px; color:#64748b; margin-bottom:12px;">Perkiraan total belanja pupuk untuk siklus yang dipilih:</p>
+                  <div style="font-size:24px; font-weight:800; color:#1b4332; margin-bottom:10px;" id="calc-total-biaya-est">Rp 0</div>
+                  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-sm btn-primary" onclick="jadwalkanPemupukanKeKegiatan()">
+                      <i data-lucide="calendar-plus"></i> Jadwalkan ke Kegiatan
+                    </button>
+                    <button class="btn btn-sm btn-outline" onclick="catatEstimasiPupukKeBiaya()">
+                      <i data-lucide="wallet"></i> Catat ke Biaya Kebun
+                    </button>
+                  </div>
+                </div>
+
+                <div class="weather-advisory-box" id="calc-weather-advisory">
+                  <i data-lucide="cloud-sun" style="width:24px; height:24px; color:#2d6a4f; flex-shrink:0;"></i>
+                  <div>
+                    <strong style="color:#1b4332; font-size:13.5px; display:block; margin-bottom:4px;" id="advisory-title">Panduan Cuaca Penaburan Pupuk</strong>
+                    <p style="font-size:12px; color:#334155; line-height:1.5; margin:0;" id="advisory-desc">Memuat data stasiun telemetry cuaca...</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Agronomic Guidelines Accordion / Info Box -->
+              <div style="margin-top:20px; padding:16px; background:rgba(45,106,79,0.04); border-left:4px solid var(--primary-green); border-radius:8px;">
+                <h5 style="font-size:13px; font-weight:700; color:#1b4332; margin-bottom:6px;">Petunjuk Teknis Aplikasi Penaburan di Lapangan:</h5>
+                <ul style="font-size:12px; color:#475569; line-height:1.6; margin:0; padding-left:18px;">
+                  <li><strong>Urea & MOP (KCl):</strong> Taburkan merata melingkar pada piringan pohon sejauh 1.5 - 2 meter dari pangkal batang (hindari kontak langsung dengan batang).</li>
+                  <li><strong>RP / TSP & Kieserite:</strong> Tebarkan di atas tumpukan pelepah mati (gawangan mati) atau piringan luar untuk mengoptimalkan serapan akar lateral.</li>
+                  <li><strong>Borat:</strong> Aplikasi di ketiak pelepah atau piringan dekat tajuk pohon, jangan dicampur serentak dengan pupuk bernitrogen tinggi.</li>
+                  <li><strong>Jarak Antar Jenis Pupuk:</strong> Beri jeda minimal 2 minggu antara aplikasi Urea dengan pupuk ber-kalsium/magnesium (Kieserite/Dolomit) agar nitrogen tidak menguap sebagai gas amonia.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 5: HASIL PANEN -->
         <!-- ============================================ -->
         <section id="view-hasil-panen" class="page-view">
           <div class="page-header">
@@ -655,7 +792,150 @@
         </section>
 
         <!-- ============================================ -->
-        <!-- VIEW 5: MONITORING CUACA -->
+        <!-- VIEW 6: KEUANGAN & LABA BERSIH OPERASIONAL -->
+        <!-- ============================================ -->
+        <section id="view-keuangan" class="page-view">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Keuangan & Laba Bersih</h1>
+              <p class="page-subtitle">Monitoring arus kas, biaya operasional perkebunan, dan margin keuntungan TBS</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" onclick="exportTableToCSV('tabel-biaya-operasional', 'Biaya_Operasional_Kebun.csv')">
+                <i data-lucide="download"></i> Download CSV
+              </button>
+              <button class="btn btn-primary" id="btn-tambah-biaya" onclick="openModal('modal-biaya')">
+                <i data-lucide="plus"></i> Catat Biaya Operasional
+              </button>
+            </div>
+          </div>
+
+          <!-- Financial KPIs Grid (4 Cards) -->
+          <div class="finance-kpi-grid">
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-header">
+                <span class="finance-kpi-title">Total Pendapatan TBS (Revenue)</span>
+                <div class="finance-kpi-icon" style="background:rgba(16,185,129,0.1); color:#10b981;">
+                  <i data-lucide="trending-up"></i>
+                </div>
+              </div>
+              <div class="finance-kpi-value" id="kpi-fin-revenue" style="color:#2d6a4f;">Rp 0</div>
+              <div class="finance-kpi-footer text-muted" id="kpi-fin-sub-revenue">Dari seluruh transaksi panen TBS</div>
+            </div>
+
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-header">
+                <span class="finance-kpi-title">Total Biaya Operasional (Expenses)</span>
+                <div class="finance-kpi-icon" style="background:rgba(239,68,68,0.1); color:#ef4444;">
+                  <i data-lucide="trending-down"></i>
+                </div>
+              </div>
+              <div class="finance-kpi-value" id="kpi-fin-expenses" style="color:#ef4444;">Rp 0</div>
+              <div class="finance-kpi-footer text-muted" id="kpi-fin-sub-expenses">Upah, pupuk, pestisida, transport</div>
+            </div>
+
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-header">
+                <span class="finance-kpi-title">Laba Bersih Kebun (Net Profit)</span>
+                <div class="finance-kpi-icon" id="kpi-fin-profit-icon" style="background:rgba(45,106,79,0.1); color:#2d6a4f;">
+                  <i data-lucide="wallet"></i>
+                </div>
+              </div>
+              <div class="finance-kpi-value" id="kpi-fin-net-profit">Rp 0</div>
+              <div class="finance-kpi-footer" id="kpi-fin-profit-badge">
+                <span class="badge badge-soft-green" id="kpi-fin-margin-pct">Margin: 0%</span>
+              </div>
+            </div>
+
+            <div class="finance-kpi-card">
+              <div class="finance-kpi-header">
+                <span class="finance-kpi-title">HPP Biaya Produksi per Kg</span>
+                <div class="finance-kpi-icon" style="background:rgba(2,132,199,0.1); color:#0284c7;">
+                  <i data-lucide="scale"></i>
+                </div>
+              </div>
+              <div class="finance-kpi-value" id="kpi-fin-cost-per-kg" style="color:#0284c7;">Rp 0 / kg</div>
+              <div class="finance-kpi-footer text-muted" id="kpi-fin-sub-hpp">Biaya per kilogram buah TBS</div>
+            </div>
+          </div>
+
+          <!-- Charts Row: Cashflow Trend + Category Distribution -->
+          <div class="panen-top-grid" style="margin-bottom: 24px;">
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Arus Kas Bulanan (Pendapatan vs Pengeluaran)</h3>
+                  <p class="card-subtitle">Komparasi pendapatan hasil panen terhadap biaya operasional bulanan</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container" style="height: 280px;">
+                  <canvas id="chartArusKas"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <div class="card chart-card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Alokasi Biaya Operasional</h3>
+                  <p class="card-subtitle">Distribusi pengeluaran berdasarkan kategori operasional</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="chart-container pie-container" style="height: 280px;">
+                  <canvas id="chartKategoriBiaya"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Card: Rincian Biaya Operasional -->
+          <div class="card table-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Daftar Transaksi Biaya Operasional</h3>
+                <p class="card-subtitle">Semua catatan pengeluaran tenaga kerja, sarana produksi, dan perawatan kebun</p>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                <div class="search-box">
+                  <i data-lucide="search"></i>
+                  <input type="text" id="search-biaya" placeholder="Cari keterangan / petugas...">
+                </div>
+                <select id="filter-biaya-kategori" class="form-control" style="width: auto; min-width: 170px;">
+                  <option value="all">Semua Kategori</option>
+                  <option value="Upah Tenaga Kerja">Upah Tenaga Kerja</option>
+                  <option value="Pupuk & Nutrisi">Pupuk & Nutrisi</option>
+                  <option value="Herbisida & Hama">Herbisida & Hama</option>
+                  <option value="Bahan Bakar & Transport">Bahan Bakar & Transport</option>
+                  <option value="Perawatan Jalan & Parit">Perawatan Jalan & Parit</option>
+                  <option value="Alat & Operasional Lain">Alat & Operasional Lain</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="tabel-biaya-operasional">
+                <thead>
+                  <tr>
+                    <th>Tanggal</th>
+                    <th>Kategori Biaya</th>
+                    <th>Alokasi Blok</th>
+                    <th>Keterangan / Rincian</th>
+                    <th>Petugas / PIC</th>
+                    <th>Jumlah (Rp)</th>
+                    <th class="text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="biaya-table-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- VIEW 7: MONITORING CUACA -->
         <!-- ============================================ -->
         <section id="view-monitoring-cuaca" class="page-view">
           <div class="page-header">
@@ -1385,6 +1665,63 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="closeModal('modal-panen')">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan Panen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Biaya Operasional -->
+  <div class="modal-overlay hidden" id="modal-biaya">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Catat Biaya Operasional</h3>
+        <button class="modal-close" onclick="closeModal('modal-biaya')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="form-biaya" onsubmit="handleSaveBiaya(event)">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tanggal Transaksi <span class="required">*</span></label>
+              <input type="date" id="biaya-tanggal" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Kategori Biaya <span class="required">*</span></label>
+              <select id="biaya-kategori" class="form-control" required>
+                <option value="Upah Tenaga Kerja">Upah Tenaga Kerja (Panen, Muat, Tunas)</option>
+                <option value="Pupuk & Nutrisi">Pembelian Pupuk & Nutrisi</option>
+                <option value="Herbisida & Hama">Herbisida, Pestisida & Racun Hama</option>
+                <option value="Bahan Bakar & Transport">Bahan Bakar & Sewa Transport Truk</option>
+                <option value="Perawatan Jalan & Parit">Perawatan Jalan Kebun, Jembatan & Parit</option>
+                <option value="Alat & Operasional Lain">Alat Kerja & Operasional Lainnya</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Alokasi Blok Lahan</label>
+              <select id="biaya-blok" class="form-control">
+                <!-- Terisi otomatis dari daftar lahan + Umum -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Jumlah Biaya (Rp) <span class="required">*</span></label>
+              <input type="number" id="biaya-jumlah" class="form-control" placeholder="Contoh: 1500000" min="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Keterangan / Rincian Pengeluaran <span class="required">*</span></label>
+            <input type="text" id="biaya-deskripsi" class="form-control" placeholder="Contoh: Upah panen 20 ton @ Rp 120/kg" required>
+          </div>
+          <div class="form-group">
+            <label>Petugas / Penanggung Jawab</label>
+            <select id="biaya-petugas" class="form-control">
+              <!-- Terisi otomatis dari daftar pekerja -->
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-biaya')">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Pengeluaran</button>
         </div>
       </form>
     </div>

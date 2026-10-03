@@ -1252,6 +1252,21 @@ body {
   color: #b91c1c;
 }
 
+.badge-soft-purple {
+  background-color: #f3e8ff;
+  color: #7e22ce;
+}
+
+.badge-soft-emerald {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.badge-soft-gray {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
 .badge-buyer {
   background-color: #eaf5ed;
   color: #1e5a38;
@@ -3935,5 +3950,175 @@ html.is-authenticated .app-container {
   color: #1b4332;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
+
+/* ==========================================================================
+   MODUL KEUANGAN & LABA BERSIH
+   ========================================================================== */
+.finance-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.finance-kpi-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.finance-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.finance-kpi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.finance-kpi-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.finance-kpi-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.finance-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.finance-kpi-footer {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   KALKULATOR PUPUK & AGRONOMI CERDAS
+   ========================================================================== */
+.pupuk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.pupuk-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.pupuk-card:hover {
+  border-color: #2d6a4f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.1);
+}
+
+.pupuk-badge-nutrient {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 8px;
+  width: fit-content;
+}
+
+.pupuk-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.pupuk-func {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-bottom: 12px;
+  min-height: 32px;
+  line-height: 1.4;
+}
+
+.pupuk-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px dashed #f1f5f9;
+  font-size: 12.5px;
+}
+
+.pupuk-stat-value {
+  font-weight: 700;
+  color: #1b4332;
+}
+
+.pupuk-total-highlight {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  text-align: center;
+}
+
+.pupuk-total-highlight span {
+  font-size: 11px;
+  color: #166534;
+  display: block;
+}
+
+.pupuk-total-highlight strong {
+  font-size: 16px;
+  color: #14532d;
+  font-weight: 800;
+}
+
+.weather-advisory-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%);
+  border: 1px solid #c8e6c9;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+}
+
+.weather-advisory-box.warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fde68a;
+}
+
 
 

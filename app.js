@@ -54,8 +54,14 @@ const state = {
   // Hasil Panen (kosong, diisi langsung oleh user)
   panenList: [],
 
+  // Biaya Operasional Kebun (Expenses & Cashflow)
+  biayaList: [],
+
   // Monitoring Cuaca (kosong, diisi langsung oleh user/IoT sync)
   cuacaList: [],
+
+  // Cache hasil rekomendasi pemupukan cerdas
+  lastPupukCalculation: null,
 
   // Weather Location Settings
   weatherLocation: JSON.parse(localStorage.getItem('sawit_weather_location')) || {
@@ -174,6 +180,8 @@ async function loadSavedData() {
     if (savedKegiatan) state.kegiatanList = JSON.parse(savedKegiatan).filter(k => !isMockRecord(k));
     const savedPanen = localStorage.getItem('sawit_panen_list');
     if (savedPanen) state.panenList = JSON.parse(savedPanen).filter(p => !isMockRecord(p));
+    const savedBiaya = localStorage.getItem('sawit_biaya_list');
+    if (savedBiaya) state.biayaList = JSON.parse(savedBiaya).filter(b => !isMockRecord(b));
     const savedCuaca = localStorage.getItem('sawit_cuaca_list');
     if (savedCuaca) state.cuacaList = JSON.parse(savedCuaca).filter(c => !isMockRecord(c));
 
@@ -223,13 +231,14 @@ async function loadSavedData() {
     if (online) {
       showToast('Terhubung ke database Cloudflare D1!', 'success');
       try {
-        const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca, dbPengaturan] = await Promise.all([
+        const [dbLahan, dbPekerja, dbKegiatan, dbPanen, dbCuaca, dbPengaturan, dbBiaya] = await Promise.all([
           ApiService.lahan.get(),
           ApiService.pekerja.get(),
           ApiService.kegiatan.get(),
           ApiService.panen.get(),
           ApiService.cuaca.get(),
-          ApiService.pengaturan.get()
+          ApiService.pengaturan.get(),
+          ApiService.biaya ? ApiService.biaya.get() : Promise.resolve([])
         ]);
 
         // 1. Data Lahan Sync
@@ -293,6 +302,12 @@ async function loadSavedData() {
         if (dbCuaca && Array.isArray(dbCuaca)) {
           const cleanCuaca = dbCuaca.filter(c => !isMockRecord(c));
           state.cuacaList = cleanCuaca;
+        }
+
+        // 5b. Biaya Operasional Sync (Cloudflare D1 is the master database)
+        if (dbBiaya && Array.isArray(dbBiaya)) {
+          const cleanBiaya = dbBiaya.filter(b => !isMockRecord(b));
+          state.biayaList = cleanBiaya;
         }
 
         // 6. Pengaturan Sync & Normalisasi Pembeli
@@ -363,6 +378,7 @@ function saveLocalState() {
     localStorage.setItem('sawit_lahan_list', JSON.stringify(state.lahanList));
     localStorage.setItem('sawit_kegiatan_list', JSON.stringify(state.kegiatanList));
     localStorage.setItem('sawit_panen_list', JSON.stringify(state.panenList));
+    localStorage.setItem('sawit_biaya_list', JSON.stringify(state.biayaList));
     localStorage.setItem('sawit_cuaca_list', JSON.stringify(state.cuacaList));
   } catch (err) {
     console.warn('LocalStorage save failed', err);
@@ -508,7 +524,9 @@ function switchView(viewId) {
       'dashboard': 'Dashboard',
       'data-lahan': 'Data Lahan',
       'perkembangan': 'Perkembangan Tanaman',
+      'kalkulator-pupuk': 'Kalkulator Pupuk & Agronomi Cerdas',
       'hasil-panen': 'Hasil Panen',
+      'keuangan': 'Keuangan & Laba Bersih',
       'monitoring-cuaca': 'Monitoring Cuaca',
       'laporan': 'Laporan',
       'manajemen-pekerja': 'Manajemen Pekerja',
@@ -519,6 +537,12 @@ function switchView(viewId) {
 
   const sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.classList.remove('open');
+
+  if (viewId === 'keuangan') {
+    renderKeuangan();
+  } else if (viewId === 'kalkulator-pupuk') {
+    initKalkulatorPupuk();
+  }
 
   setTimeout(() => {
     Object.values(charts).forEach(chart => {
@@ -564,6 +588,8 @@ function initTables() {
   renderKegiatanBlokFilter();
   updateKPIs();
   generateRealtimeNotifications();
+  renderKeuangan();
+  initKalkulatorPupuk();
 }
 
 // 1. Data Lahan Table (With Mandor Relation & Detail Popover)
@@ -1643,6 +1669,9 @@ function openModal(id) {
       populatePembelijSelect();
       setPanenMode(state.panenInputMode || 'flat');
     }
+    if (id === 'modal-biaya') {
+      populateBiayaFormOptions();
+    }
     modal.classList.remove('hidden');
   }
 }
@@ -1861,6 +1890,7 @@ async function handleSaveLahan(e) {
   renderKegiatanBlokFilter();
   updateDashboardBlokChart();
   updateKPIs();
+  populateCalcBlokDropdown();
   generateRealtimeNotifications();
   closeModal('modal-lahan');
 }
@@ -1911,6 +1941,7 @@ async function deleteLahan(id) {
     renderLaporanTable();
     updateDashboardBlokChart();
     updateKPIs();
+    populateCalcBlokDropdown();
     showToast(`Lahan ${lahan.nama} berhasil dihapus`, 'error');
   }
 }
@@ -2246,6 +2277,8 @@ async function handleSavePanen(e) {
   updateDashboardBlokChart();
   updatePanenBulananChart();
   updateKPIs();
+  updateKeuanganKPIs();
+  updateChartArusKas();
   generateRealtimeNotifications();
   closeModal('modal-panen');
   
@@ -2300,6 +2333,8 @@ async function deletePanen(id) {
     updateDashboardBlokChart();
     updatePanenBulananChart();
     updateKPIs();
+    updateKeuanganKPIs();
+    updateChartArusKas();
     showToast('Catatan panen telah dihapus secara permanen', 'error');
   }
 }
@@ -3382,6 +3417,29 @@ function initEventListeners() {
     renderPekerjaTable(filtered);
   });
 
+  // Biaya Operasional search & filter
+  const searchBiaya = document.getElementById('search-biaya');
+  const filterBiayaKategori = document.getElementById('filter-biaya-kategori');
+
+  function applyBiayaFilter() {
+    const term = searchBiaya ? searchBiaya.value.toLowerCase().trim() : '';
+    const kat = filterBiayaKategori ? filterBiayaKategori.value : 'all';
+
+    const filtered = state.biayaList.filter(b => {
+      const matchTerm = !term ||
+                        (b.deskripsi && b.deskripsi.toLowerCase().includes(term)) ||
+                        (b.petugas && b.petugas.toLowerCase().includes(term)) ||
+                        (b.blok && b.blok.toLowerCase().includes(term)) ||
+                        (b.kategori && b.kategori.toLowerCase().includes(term));
+      const matchKat = kat === 'all' || b.kategori === kat;
+      return matchTerm && matchKat;
+    });
+    renderBiayaTable(filtered);
+  }
+
+  searchBiaya?.addEventListener('input', applyBiayaFilter);
+  filterBiayaKategori?.addEventListener('change', applyBiayaFilter);
+
   // Weather Sync & Clear buttons
   document.getElementById('btn-sync-weather')?.addEventListener('click', syncWeatherData);
   document.getElementById('btn-clear-all-cuaca')?.addEventListener('click', clearAllCuaca);
@@ -3539,11 +3597,15 @@ function initCharts() {
   initChartTrenCuaca();
   initChartLaporanBulanan();
   initChartDistribusiPanen();
+  initChartArusKas();
+  initChartKategoriBiaya();
 
   // Populate dynamic chart values from real state data
   updateDashboardProduksiChart();
   updateDashboardBlokChart();
   updatePanenBulananChart();
+  updateChartArusKas();
+  updateChartKategoriBiaya();
 }
 
 function updateDashboardProduksiChart() {
@@ -4093,6 +4155,837 @@ function formatTanggal(isoString) {
   }
   return isoString;
 }
+
+/* ==========================================================================
+   MODUL KEUANGAN & LABA BERSIH (REVENUE VS BIAYA OPERASIONAL)
+   ========================================================================== */
+
+function initChartArusKas() {
+  const ctx = document.getElementById('chartArusKas');
+  if (!ctx) return;
+
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  charts.arusKas = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          label: 'Pendapatan Panen (Rp)',
+          data: new Array(12).fill(0),
+          backgroundColor: '#2d6a4f',
+          borderRadius: 6,
+          barPercentage: 0.6,
+          categoryPercentage: 0.8
+        },
+        {
+          label: 'Biaya Operasional (Rp)',
+          data: new Array(12).fill(0),
+          backgroundColor: '#ef4444',
+          borderRadius: 6,
+          barPercentage: 0.6,
+          categoryPercentage: 0.8
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 12, padding: 12, font: { size: 12, weight: '600' } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: Rp ${Number(ctx.parsed.y).toLocaleString('id-ID')}`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: '#f1f5f2' },
+          ticks: {
+            callback: (val) => {
+              if (val >= 1000000000) return (val / 1000000000).toFixed(1) + ' M';
+              if (val >= 1000000) return (val / 1000000).toFixed(0) + ' Jt';
+              if (val >= 1000) return (val / 1000).toFixed(0) + ' Rb';
+              return val;
+            }
+          }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function initChartKategoriBiaya() {
+  const ctx = document.getElementById('chartKategoriBiaya');
+  if (!ctx) return;
+
+  charts.kategoriBiaya = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Belum Ada Biaya'],
+      datasets: [{
+        data: [1],
+        backgroundColor: ['#e2e8f0'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { boxWidth: 12, padding: 10, font: { size: 11.5 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              if (ctx.label === 'Belum Ada Biaya' || ctx.label === 'Belum Ada Pengeluaran') return 'Belum ada data pengeluaran';
+              return `${ctx.label}: Rp ${Number(ctx.raw).toLocaleString('id-ID')}`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function updateChartArusKas() {
+  if (!charts.arusKas) return;
+  const curYear = state.laporanSelectedYear || new Date().getFullYear();
+
+  const revByMonth = new Array(12).fill(0);
+  state.panenList.forEach(p => {
+    if (!p.tanggal) return;
+    const d = new Date(p.tanggal);
+    if (d.getFullYear() === curYear) {
+      const m = d.getMonth();
+      if (m >= 0 && m < 12) {
+        revByMonth[m] += (Number(p.jumlah) || 0) * (Number(p.harga) || 0);
+      }
+    }
+  });
+
+  const expByMonth = new Array(12).fill(0);
+  state.biayaList.forEach(b => {
+    if (!b.tanggal) return;
+    const d = new Date(b.tanggal);
+    if (d.getFullYear() === curYear) {
+      const m = d.getMonth();
+      if (m >= 0 && m < 12) {
+        expByMonth[m] += Number(b.jumlah) || 0;
+      }
+    }
+  });
+
+  charts.arusKas.data.datasets[0].data = revByMonth;
+  charts.arusKas.data.datasets[1].data = expByMonth;
+  charts.arusKas.update();
+}
+
+function updateChartKategoriBiaya() {
+  if (!charts.kategoriBiaya) return;
+
+  const categories = [
+    'Upah Tenaga Kerja',
+    'Pupuk & Nutrisi',
+    'Herbisida & Hama',
+    'Bahan Bakar & Transport',
+    'Perawatan Jalan & Parit',
+    'Alat & Operasional Lain'
+  ];
+  const catColors = ['#2d6a4f', '#10b981', '#d97706', '#0284c7', '#8b5cf6', '#64748b'];
+
+  const sums = categories.map(cat => {
+    return state.biayaList
+      .filter(b => b.kategori === cat)
+      .reduce((sum, b) => sum + (Number(b.jumlah) || 0), 0);
+  });
+
+  const totalBiaya = sums.reduce((a, b) => a + b, 0);
+
+  if (totalBiaya <= 0) {
+    charts.kategoriBiaya.data.labels = ['Belum Ada Pengeluaran'];
+    charts.kategoriBiaya.data.datasets[0].data = [1];
+    charts.kategoriBiaya.data.datasets[0].backgroundColor = ['#e2e8f0'];
+  } else {
+    const activeCats = [];
+    const activeSums = [];
+    const activeColors = [];
+
+    categories.forEach((cat, idx) => {
+      if (sums[idx] > 0) {
+        activeCats.push(cat);
+        activeSums.push(sums[idx]);
+        activeColors.push(catColors[idx]);
+      }
+    });
+
+    charts.kategoriBiaya.data.labels = activeCats;
+    charts.kategoriBiaya.data.datasets[0].data = activeSums;
+    charts.kategoriBiaya.data.datasets[0].backgroundColor = activeColors;
+  }
+
+  charts.kategoriBiaya.update();
+}
+
+function updateKeuanganKPIs() {
+  const totalRevenue = state.panenList.reduce((acc, p) => acc + ((Number(p.jumlah) || 0) * (Number(p.harga) || 0)), 0);
+  const totalExpenses = state.biayaList.reduce((acc, b) => acc + (Number(b.jumlah) || 0), 0);
+  const netProfit = totalRevenue - totalExpenses;
+  const marginPct = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0';
+  const totalKg = state.panenList.reduce((acc, p) => acc + (Number(p.jumlah) || 0), 0);
+  const hppPerKg = totalKg > 0 ? (totalExpenses / totalKg) : 0;
+
+  // DOM Elements
+  const revEl = document.getElementById('kpi-fin-revenue');
+  const expEl = document.getElementById('kpi-fin-expenses');
+  const netEl = document.getElementById('kpi-fin-net-profit');
+  const subRev = document.getElementById('kpi-fin-sub-revenue');
+  const subExp = document.getElementById('kpi-fin-sub-expenses');
+  const iconEl = document.getElementById('kpi-fin-profit-icon');
+  const badgeEl = document.getElementById('kpi-fin-profit-badge');
+  const hppEl = document.getElementById('kpi-fin-cost-per-kg');
+  const subHpp = document.getElementById('kpi-fin-sub-hpp');
+
+  if (revEl) revEl.textContent = `Rp ${Math.round(totalRevenue).toLocaleString('id-ID')}`;
+  if (subRev) subRev.textContent = `Dari ${state.panenList.length} transaksi panen TBS tercatat`;
+
+  if (expEl) expEl.textContent = `Rp ${Math.round(totalExpenses).toLocaleString('id-ID')}`;
+  if (subExp) subExp.textContent = `Dari ${state.biayaList.length} pos operasional terverifikasi`;
+
+  if (netEl) {
+    if (netProfit >= 0) {
+      netEl.textContent = `Rp ${Math.round(netProfit).toLocaleString('id-ID')}`;
+      netEl.style.color = '#2d6a4f';
+    } else {
+      netEl.textContent = `-Rp ${Math.abs(Math.round(netProfit)).toLocaleString('id-ID')}`;
+      netEl.style.color = '#ef4444';
+    }
+  }
+
+  if (iconEl) {
+    if (netProfit >= 0) {
+      iconEl.style.background = 'rgba(45,106,79,0.1)';
+      iconEl.style.color = '#2d6a4f';
+    } else {
+      iconEl.style.background = 'rgba(239,68,68,0.1)';
+      iconEl.style.color = '#ef4444';
+    }
+  }
+
+  if (badgeEl) {
+    if (netProfit >= 0) {
+      badgeEl.innerHTML = `<span class="badge badge-soft-green" id="kpi-fin-margin-pct"><i data-lucide="trending-up" style="width:12px; height:12px;"></i> Margin: +${marginPct}%</span>`;
+    } else {
+      badgeEl.innerHTML = `<span class="badge badge-soft-red" id="kpi-fin-margin-pct"><i data-lucide="trending-down" style="width:12px; height:12px;"></i> Margin: ${marginPct}% (Defisit)</span>`;
+    }
+  }
+
+  if (hppEl) {
+    hppEl.textContent = `Rp ${Math.round(hppPerKg).toLocaleString('id-ID')} / kg`;
+  }
+  if (subHpp) {
+    subHpp.textContent = totalKg > 0 ? `Total produksi: ${totalKg.toLocaleString('id-ID')} kg TBS` : 'Belum ada data tonase panen';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderBiayaTable(filteredList = state.biayaList) {
+  const tbody = document.getElementById('biaya-table-body');
+  if (!tbody) return;
+
+  if (filteredList.length === 0) {
+    if (state.biayaList.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card">
+              <div class="empty-state-icon-circle" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                <i data-lucide="wallet"></i>
+              </div>
+              <h4 class="empty-state-title">Belum Ada Biaya Operasional</h4>
+              <p class="empty-state-desc">Catat pengeluaran kebun seperti upah pekerja panen/tunas, pembelian pupuk, herbisida, BBM truk, atau perawatan infrastruktur untuk menghitung laba bersih kebun dan HPP per kg TBS.</p>
+              <button class="btn btn-primary empty-state-action" onclick="openModal('modal-biaya')">
+                <i data-lucide="plus-circle"></i> Catat Biaya Pertama
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="table-empty-row text-center">
+            <div class="empty-state-card" style="padding: 28px 16px;">
+              <i data-lucide="search-x" style="width:36px; height:36px; color:#94a3b8; margin-bottom:10px;"></i>
+              <h4 class="empty-state-title" style="font-size:15px;">Tidak Ditemukan Data Pengeluaran</h4>
+              <p class="empty-state-desc" style="font-size:13px; margin-bottom:0;">Coba sesuaikan kata kunci pencarian atau filter kategori pengeluaran.</p>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  const categoryBadgeMap = {
+    'Upah Tenaga Kerja': 'badge-soft-green',
+    'Pupuk & Nutrisi': 'badge-soft-emerald',
+    'Herbisida & Hama': 'badge-soft-amber',
+    'Bahan Bakar & Transport': 'badge-soft-blue',
+    'Perawatan Jalan & Parit': 'badge-soft-purple',
+    'Alat & Operasional Lain': 'badge-soft-gray'
+  };
+
+  const rows = filteredList.map(item => {
+    const badgeClass = categoryBadgeMap[item.kategori] || 'badge-soft-gray';
+    const formattedDate = formatTanggal(item.tanggal);
+    const formattedAmt = Number(item.jumlah || 0).toLocaleString('id-ID');
+
+    return `
+      <tr>
+        <td><strong>${formattedDate}</strong></td>
+        <td><span class="badge ${badgeClass}">${item.kategori}</span></td>
+        <td><span class="badge badge-outline" style="border:1px solid #cbd5e1; color:#334155;">${item.blok || 'Seluruh Kebun'}</span></td>
+        <td><strong>${item.deskripsi || '-'}</strong></td>
+        <td>${item.petugas || '-'}</td>
+        <td><strong style="color:#ef4444; font-size:13.5px;">Rp ${formattedAmt}</strong></td>
+        <td class="text-center">
+          <div class="action-btn-group">
+            <button class="btn-table-action delete" onclick="deleteBiaya(${item.id})" title="Hapus Catatan Biaya">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = rows.join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function populateBiayaFormOptions() {
+  const tanggalInput = document.getElementById('biaya-tanggal');
+  if (tanggalInput && !tanggalInput.value) {
+    tanggalInput.value = new Date().toISOString().split('T')[0];
+  }
+
+  const blokSelect = document.getElementById('biaya-blok');
+  if (blokSelect) {
+    const curVal = blokSelect.value || 'Seluruh Kebun (Umum)';
+    const opts = ['<option value="Seluruh Kebun (Umum)">Seluruh Kebun (Umum)</option>'];
+    if (state.lahanList && state.lahanList.length > 0) {
+      state.lahanList.forEach(l => {
+        opts.push(`<option value="${l.nama}" ${l.nama === curVal ? 'selected' : ''}>${l.nama} (${l.luas} Ha)</option>`);
+      });
+    }
+    blokSelect.innerHTML = opts.join('');
+  }
+
+  const petugasSelect = document.getElementById('biaya-petugas');
+  if (petugasSelect) {
+    const curVal = petugasSelect.value || '';
+    if (state.pekerjaList && state.pekerjaList.length > 0) {
+      const opts = state.pekerjaList.map(p => 
+        `<option value="${p.nama}" ${p.nama === curVal ? 'selected' : ''}>${p.nama} (${p.posisi})</option>`
+      );
+      petugasSelect.innerHTML = opts.join('');
+    } else {
+      petugasSelect.innerHTML = '<option value="">-- Belum ada petugas terdaftar --</option>';
+    }
+  }
+}
+
+async function handleSaveBiaya(e) {
+  e.preventDefault();
+
+  const tanggal = document.getElementById('biaya-tanggal').value;
+  const kategori = document.getElementById('biaya-kategori').value;
+  const blok = document.getElementById('biaya-blok').value;
+  const jumlahVal = document.getElementById('biaya-jumlah').value;
+  const deskripsi = document.getElementById('biaya-deskripsi').value.trim();
+  const petugas = document.getElementById('biaya-petugas').value;
+
+  const jumlah = parseFloat(jumlahVal) || 0;
+  if (jumlah <= 0) {
+    showToast('Masukkan nominal pengeluaran yang valid (> Rp 0)!', 'error');
+    return;
+  }
+  if (!deskripsi) {
+    showToast('Keterangan / rincian biaya tidak boleh kosong!', 'error');
+    return;
+  }
+
+  const newBiaya = {
+    id: Date.now(),
+    tanggal,
+    kategori,
+    blok: blok || 'Seluruh Kebun (Umum)',
+    jumlah,
+    deskripsi,
+    petugas: petugas || ''
+  };
+
+  let d1Success = false;
+  if (window.ApiService && ApiService.isOnline() && ApiService.biaya) {
+    try {
+      const res = await ApiService.biaya.create(newBiaya);
+      if (res && res.success) {
+        d1Success = true;
+        if (res.id) newBiaya.id = res.id;
+      }
+    } catch (err) {
+      console.warn('Gagal sinkronisasi biaya ke Cloudflare D1:', err);
+    }
+  }
+
+  state.biayaList.unshift(newBiaya);
+  saveLocalState();
+
+  renderBiayaTable();
+  updateKeuanganKPIs();
+  updateChartArusKas();
+  updateChartKategoriBiaya();
+
+  closeModal('modal-biaya');
+
+  // Reset form inputs
+  if (document.getElementById('biaya-jumlah')) document.getElementById('biaya-jumlah').value = '';
+  if (document.getElementById('biaya-deskripsi')) document.getElementById('biaya-deskripsi').value = '';
+
+  showToast(`Biaya operasional berhasil dicatat ${d1Success ? '& tersinkronisasi ke Cloudflare D1' : ''}`, 'success');
+}
+window.handleSaveBiaya = handleSaveBiaya;
+
+async function deleteBiaya(id) {
+  const item = state.biayaList.find(x => x.id === id);
+  const detail = item ? `pengeluaran "${item.deskripsi}" senilai Rp ${Number(item.jumlah).toLocaleString('id-ID')}` : 'catatan biaya ini';
+
+  const confirmed = await showConfirmDialog({
+    title: 'Hapus Biaya Operasional?',
+    message: `Apakah Anda yakin ingin menghapus ${detail}? Laba bersih dan HPP kebun akan dihitung ulang secara real-time.`,
+    confirmText: 'Ya, Hapus',
+    cancelText: 'Batal',
+    type: 'danger',
+    icon: 'trash-2'
+  });
+
+  if (confirmed) {
+    const deletedItem = item;
+    state.biayaList = state.biayaList.filter(x => x.id !== id);
+
+    if (window.ApiService && ApiService.isOnline() && ApiService.biaya) {
+      try {
+        if (id && Number(id) < 10000000000) {
+          await ApiService.biaya.delete(id);
+        } else if (deletedItem) {
+          const dbRows = await ApiService.biaya.get();
+          if (dbRows && Array.isArray(dbRows)) {
+            const match = dbRows.find(r => r.tanggal === deletedItem.tanggal && Number(r.jumlah) === Number(deletedItem.jumlah) && r.deskripsi === deletedItem.deskripsi);
+            if (match && match.id) {
+              await ApiService.biaya.delete(match.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal sync delete biaya ke Cloudflare D1:', err);
+      }
+    }
+
+    saveLocalState();
+    renderBiayaTable();
+    updateKeuanganKPIs();
+    updateChartArusKas();
+    updateChartKategoriBiaya();
+    showToast('Catatan biaya telah dihapus', 'error');
+  }
+}
+window.deleteBiaya = deleteBiaya;
+
+function renderKeuangan() {
+  updateKeuanganKPIs();
+  renderBiayaTable();
+  updateChartArusKas();
+  updateChartKategoriBiaya();
+}
+window.renderKeuangan = renderKeuangan;
+
+/* ==========================================================================
+   KALKULATOR & REKOMENDASI PEMUPUKAN CERDAS (AGRONOMI PINTAR)
+   ========================================================================== */
+
+const PPKS_DOSES = {
+  tbm_1: { urea: 0.5, sp36: 0.5, mop: 0.5, kieserite: 0.3, borat: 0.050, label: 'TBM 1 (0-1 Tahun)' },
+  tbm_2: { urea: 1.0, sp36: 0.75, mop: 1.0, kieserite: 0.5, borat: 0.075, label: 'TBM 2 (1-2 Tahun)' },
+  tbm_3: { urea: 1.5, sp36: 1.0, mop: 1.5, kieserite: 0.75, borat: 0.100, label: 'TBM 3 (2-3 Tahun)' },
+  tm_muda: { urea: 2.0, sp36: 1.5, mop: 2.5, kieserite: 1.0, borat: 0.100, label: 'TM Muda (4-8 Tahun)' },
+  tm_prima: { urea: 2.5, sp36: 1.75, mop: 2.75, kieserite: 1.25, borat: 0.100, label: 'TM Prima (9-14 Tahun)' },
+  tm_tua: { urea: 2.0, sp36: 1.5, mop: 2.25, kieserite: 1.0, borat: 0.075, label: 'TM Tua (>15 Tahun)' }
+};
+
+const PUPUK_PRICES = {
+  urea: 6800,      // Rp 6.800/kg
+  sp36: 5600,      // Rp 5.600/kg
+  mop: 8800,       // Rp 8.800/kg
+  kieserite: 4800, // Rp 4.800/kg
+  borat: 24000     // Rp 24.000/kg
+};
+
+function initKalkulatorPupuk() {
+  populateCalcBlokDropdown();
+  calculatePupukDose();
+  updateCalcWeatherAdvisory();
+}
+window.initKalkulatorPupuk = initKalkulatorPupuk;
+
+function populateCalcBlokDropdown() {
+  const select = document.getElementById('calc-pilih-blok');
+  if (!select) return;
+
+  const curVal = select.value || '__custom__';
+  const opts = ['<option value="__custom__">-- Kustom (Input Parameter Bebas) --</option>'];
+
+  if (state.lahanList && state.lahanList.length > 0) {
+    state.lahanList.forEach(l => {
+      opts.push(`<option value="${l.nama}" ${l.nama === curVal ? 'selected' : ''}>${l.nama} - ${l.luas} Ha (${l.pohon} Pohon, ${l.varietas || 'Sawit'})</option>`);
+    });
+  }
+
+  select.innerHTML = opts.join('');
+}
+
+function handleCalcBlokChange() {
+  const select = document.getElementById('calc-pilih-blok');
+  if (!select) return;
+
+  const blokName = select.value;
+  if (blokName === '__custom__') {
+    return;
+  }
+
+  const lahan = state.lahanList.find(l => l.nama === blokName);
+  if (lahan) {
+    const luasInput = document.getElementById('calc-luas');
+    const pohonInput = document.getElementById('calc-pohon');
+    if (luasInput) luasInput.value = lahan.luas;
+    if (pohonInput) pohonInput.value = lahan.pohon;
+    calculatePupukDose();
+  }
+}
+window.handleCalcBlokChange = handleCalcBlokChange;
+
+function calculatePupukDose() {
+  const luas = parseFloat(document.getElementById('calc-luas')?.value) || 1;
+  const pohon = parseInt(document.getElementById('calc-pohon')?.value) || 140;
+  const fase = document.getElementById('calc-fase')?.value || 'tm_prima';
+  const tanah = document.getElementById('calc-tanah')?.value || 'mineral';
+  const aplikasi = document.getElementById('calc-aplikasi')?.value || 'semester';
+
+  // Density indicator
+  const density = Math.round(pohon / luas);
+  const densitasEl = document.getElementById('calc-densitas-text');
+  if (densitasEl) {
+    let densStatus = '';
+    if (density >= 130 && density <= 145) {
+      densStatus = '<span style="color:#15803d; font-weight:600;">✓ Kerapatan Ideal SPH</span>';
+    } else if (density < 130) {
+      densStatus = '<span style="color:#b45309; font-weight:600;">⚠ Kerapatan Rendah</span>';
+    } else {
+      densStatus = '<span style="color:#b45309; font-weight:600;">⚠ Terlalu Rapat</span>';
+    }
+    densitasEl.innerHTML = `Kerapatan: <strong>${density} pohon / Ha</strong> (Standar SPH: 136 - 143) ${densStatus}`;
+  }
+
+  const base = PPKS_DOSES[fase] || PPKS_DOSES.tm_prima;
+  const isGambut = (tanah === 'gambut');
+  const factor = (aplikasi === 'semester') ? 0.5 : 1.0;
+
+  // Doses per tree for this application cycle
+  const ureaPerTree = +(base.urea * factor).toFixed(3);
+  const sp36PerTree = +(base.sp36 * factor).toFixed(3);
+  const mopPerTree = +( (isGambut ? base.mop * 1.25 : base.mop) * factor ).toFixed(3);
+  const kiesPerTree = +( (isGambut ? base.kieserite * 1.15 : base.kieserite) * factor ).toFixed(3);
+  const boratPerTreeGram = Math.round( (isGambut ? (base.borat + 0.025) : base.borat) * 1000 * factor );
+  const boratPerTreeKg = boratPerTreeGram / 1000;
+
+  // Total kg for entire block
+  const totalUreaKg = Math.round(ureaPerTree * pohon);
+  const totalSp36Kg = Math.round(sp36PerTree * pohon);
+  const totalMopKg = Math.round(mopPerTree * pohon);
+  const totalKiesKg = Math.round(kiesPerTree * pohon);
+  const totalBoratKg = +(boratPerTreeKg * pohon).toFixed(1);
+
+  // Sacks
+  const ureaSak = Math.ceil(totalUreaKg / 50);
+  const sp36Sak = Math.ceil(totalSp36Kg / 50);
+  const mopSak = Math.ceil(totalMopKg / 50);
+  const kiesSak = Math.ceil(totalKiesKg / 50);
+  const boratSak = Math.ceil(totalBoratKg / 25);
+
+  // Budgets
+  const ureaCost = totalUreaKg * PUPUK_PRICES.urea;
+  const sp36Cost = totalSp36Kg * PUPUK_PRICES.sp36;
+  const mopCost = totalMopKg * PUPUK_PRICES.mop;
+  const kiesCost = totalKiesKg * PUPUK_PRICES.kieserite;
+  const boratCost = Math.round(totalBoratKg * PUPUK_PRICES.borat);
+
+  const totalCost = ureaCost + sp36Cost + mopCost + kiesCost + boratCost;
+  const totalSacksAll = ureaSak + sp36Sak + mopSak + kiesSak + boratSak;
+  const totalKgAll = Math.round(totalUreaKg + totalSp36Kg + totalMopKg + totalKiesKg + totalBoratKg);
+
+  // Update header and subtitle
+  const subtitleEl = document.getElementById('calc-result-subtitle');
+  if (subtitleEl) {
+    const cycleText = (aplikasi === 'semester') ? 'Rotasi Semester (2x Aplikasi / Tahun)' : 'Total Kebutuhan 1 Tahun Penuh';
+    subtitleEl.textContent = `Standar PPKS • ${pohon.toLocaleString('id-ID')} pohon (${luas} Ha) • ${cycleText}`;
+  }
+
+  const badgeEl = document.getElementById('calc-summary-badge');
+  if (badgeEl) {
+    badgeEl.textContent = `Total: ${totalSacksAll} Sak (${totalKgAll.toLocaleString('id-ID')} kg)`;
+  }
+
+  const totalBiayaEl = document.getElementById('calc-total-biaya-est');
+  if (totalBiayaEl) {
+    totalBiayaEl.textContent = `Rp ${totalCost.toLocaleString('id-ID')}`;
+  }
+
+  // Render 5 Nutrient Cards
+  const grid = document.getElementById('pupuk-results-grid');
+  if (grid) {
+    const cards = [
+      {
+        nama: 'Urea',
+        unsur: 'N 46%',
+        badgeClass: 'badge-soft-green',
+        perPohon: `${ureaPerTree} kg`,
+        totalKg: totalUreaKg,
+        sacks: ureaSak,
+        sackSize: '50 kg',
+        cost: ureaCost,
+        func: 'Merangsang vegetatif pelepah & pembentukan klorofil daun agar fotosintesis maksimal.'
+      },
+      {
+        nama: 'SP-36 / Rock Phosphate',
+        unsur: 'P2O5 36%',
+        badgeClass: 'badge-soft-blue',
+        perPohon: `${sp36PerTree} kg`,
+        totalKg: totalSp36Kg,
+        sacks: sp36Sak,
+        sackSize: '50 kg',
+        cost: sp36Cost,
+        func: 'Memacu pertumbuhan akar serabut dan menstimulasi inisiasi tandan bunga produktif.'
+      },
+      {
+        nama: 'MOP (KCl)',
+        unsur: 'K2O 60%',
+        badgeClass: 'badge-soft-amber',
+        perPohon: `${mopPerTree} kg`,
+        totalKg: totalMopKg,
+        sacks: mopSak,
+        sackSize: '50 kg',
+        cost: mopCost,
+        func: 'Kunci bobot tandan (BJR), rendemen minyak CPO, serta ketahanan dari kekeringan.'
+      },
+      {
+        nama: 'Kieserite',
+        unsur: 'MgO 27% + S 21%',
+        badgeClass: 'badge-soft-emerald',
+        perPohon: `${kiesPerTree} kg`,
+        totalKg: totalKiesKg,
+        sacks: kiesSak,
+        sackSize: '50 kg',
+        cost: kiesCost,
+        func: 'Mencegah klorosis (daun menguning/orange spotting) dan asimilasi translokasi hara.'
+      },
+      {
+        nama: 'Borat (Fertibor)',
+        unsur: 'B 15% (Mikro)',
+        badgeClass: 'badge-soft-purple',
+        perPohon: `${boratPerTreeGram} gram`,
+        totalKg: totalBoratKg,
+        sacks: boratSak,
+        sackSize: '25 kg',
+        cost: boratCost,
+        func: 'Mencegah pelepah keriting (hook leaf, blind leaf) dan keguguran bunga betina.'
+      }
+    ];
+
+    grid.innerHTML = cards.map(c => `
+      <div class="pupuk-card">
+        <span class="pupuk-badge-nutrient ${c.badgeClass}">${c.unsur}</span>
+        <div class="pupuk-name">${c.nama}</div>
+        <div class="pupuk-func">${c.func}</div>
+        <div class="pupuk-stat-row">
+          <span>Dosis / Pohon:</span>
+          <span class="pupuk-stat-value">${c.perPohon}</span>
+        </div>
+        <div class="pupuk-stat-row">
+          <span>Estimasi Biaya:</span>
+          <span class="pupuk-stat-value">Rp ${c.cost.toLocaleString('id-ID')}</span>
+        </div>
+        <div class="pupuk-total-highlight">
+          <span>Total Kebutuhan Blok:</span>
+          <strong>${c.totalKg.toLocaleString('id-ID')} kg</strong>
+          <span style="margin-top:2px; font-weight:600;">(${c.sacks} Sak @${c.sackSize})</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Cache calculation
+  const blokSelected = document.getElementById('calc-pilih-blok')?.value;
+  state.lastPupukCalculation = {
+    blok: blokSelected === '__custom__' ? 'Kustom' : blokSelected,
+    luas,
+    pohon,
+    fase,
+    tanah,
+    aplikasi,
+    totalCost,
+    totalSacksAll,
+    totalKgAll,
+    ureaKg: totalUreaKg,
+    sp36Kg: totalSp36Kg,
+    mopKg: totalMopKg,
+    kiesKg: totalKiesKg,
+    boratKg: totalBoratKg
+  };
+
+  if (window.lucide) lucide.createIcons();
+}
+window.calculatePupukDose = calculatePupukDose;
+
+function updateCalcWeatherAdvisory() {
+  const box = document.getElementById('calc-weather-advisory');
+  const titleEl = document.getElementById('advisory-title');
+  const descEl = document.getElementById('advisory-desc');
+  if (!box || !titleEl || !descEl) return;
+
+  const latest = (state.cuacaList && state.cuacaList.length > 0) ? state.cuacaList[0] : null;
+
+  if (!latest) {
+    box.style.background = '#f8fafc';
+    box.style.borderColor = '#cbd5e1';
+    titleEl.textContent = 'Menunggu Data Telemetry Cuaca Kebun';
+    descEl.textContent = 'Hubungkan atau sinkronkan stasiun cuaca perkebunan untuk mendapatkan advisory agronomi presisi berdasarkan curah hujan real-time.';
+    return;
+  }
+
+  const curah = parseFloat(latest.curah) || 0;
+  const suhu = parseFloat(latest.suhu) || 30;
+
+  if (curah > 20) {
+    box.style.background = 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)';
+    box.style.borderColor = '#fca5a5';
+    titleEl.innerHTML = `<span style="color:#b91c1c;">⚠️ Curah Hujan Tinggi (${curah} mm) - Tunda Penaburan!</span>`;
+    descEl.textContent = `Risiko aliran air permukaan (run-off) sangat tinggi menghanyutkan butiran pupuk ke parit kebun. Tunda penaburan hingga curah hujan stabil di bawah 15 mm.`;
+  } else if (suhu >= 34 && curah === 0) {
+    box.style.background = 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+    box.style.borderColor = '#fcd34d';
+    titleEl.innerHTML = `<span style="color:#b45309;">☀️ Sangat Terik (${suhu}°C, 0 mm) - Aplikasi Pagi / Sore</span>`;
+    descEl.textContent = `Suhu tinggi memicu volatilisasi (penguapan gas amonia) pupuk Urea secara drastis pada piringan kering. Lakukan penaburan sebelum jam 09.00 pagi atau setelah jam 16.00 sore.`;
+  } else if (curah >= 3 && curah <= 15) {
+    box.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #e8f5e9 100%)';
+    box.style.borderColor = '#c8e6c9';
+    titleEl.innerHTML = `<span style="color:#15803d;">✅ Kondisi Sangat Optimal (${curah} mm, ${suhu}°C)</span>`;
+    descEl.textContent = `Kelembaban tanah saat ini sangat ideal untuk melarutkan granul pupuk secara perlahan ke daerah perakaran aktif (feeding roots) tanpa risiko hanyut.`;
+  } else {
+    box.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%)';
+    box.style.borderColor = '#e2e8f0';
+    titleEl.innerHTML = `<span style="color:#1e293b;">🌤️ Cuaca Normal (${suhu}°C, Curah ${curah} mm)</span>`;
+    descEl.textContent = `Kondisi aman untuk aplikasi pupuk. Pastikan piringan pohon bersih dari gulma tebal (weeding) sebelum menaburkan pupuk secara merata melingkar.`;
+  }
+}
+window.updateCalcWeatherAdvisory = updateCalcWeatherAdvisory;
+
+async function jadwalkanPemupukanKeKegiatan() {
+  const calc = state.lastPupukCalculation;
+  if (!calc) {
+    showToast('Hitung rekomendasi pupuk terlebih dahulu', 'warning');
+    return;
+  }
+
+  const blokName = (calc.blok && calc.blok !== '__custom__' && calc.blok !== 'Kustom') 
+    ? calc.blok 
+    : (state.lahanList[0]?.nama || 'Blok A');
+
+  const petugasName = (state.pekerjaList[0]?.nama) || 'Mandor Pupuk';
+
+  const newKegiatan = {
+    id: Date.now(),
+    tanggal: new Date().toISOString().split('T')[0],
+    blok: blokName,
+    jenis: 'Pemupukan',
+    deskripsi: `Aplikasi Pupuk PPKS (${calc.aplikasi}): Urea ${calc.ureaKg}kg, SP-36 ${calc.sp36Kg}kg, MOP ${calc.mopKg}kg, Kieserite ${calc.kiesKg}kg, Borat ${calc.boratKg}kg. Total ${calc.totalSacksAll} Sak.`,
+    kondisi: 'Normal',
+    petugas: petugasName
+  };
+
+  let d1Success = false;
+  if (window.ApiService && ApiService.isOnline() && ApiService.kegiatan) {
+    try {
+      const res = await ApiService.kegiatan.create(newKegiatan);
+      if (res && res.success) {
+        d1Success = true;
+        if (res.id) newKegiatan.id = res.id;
+      }
+    } catch (err) {
+      console.warn('Gagal sync kegiatan pemupukan ke Cloudflare D1:', err);
+    }
+  }
+
+  state.kegiatanList.unshift(newKegiatan);
+  saveLocalState();
+  renderKegiatanTable();
+  renderDashboardActivities();
+
+  showToast(`Jadwal pemupukan ${blokName} (${calc.totalSacksAll} Sak) berhasil ditambahkan ke Catatan Kegiatan Kebun!`, 'success');
+}
+window.jadwalkanPemupukanKeKegiatan = jadwalkanPemupukanKeKegiatan;
+
+function catatEstimasiPupukKeBiaya() {
+  const calc = state.lastPupukCalculation;
+  if (!calc) {
+    showToast('Hitung rekomendasi pupuk terlebih dahulu', 'warning');
+    return;
+  }
+
+  const blokName = (calc.blok && calc.blok !== '__custom__' && calc.blok !== 'Kustom') 
+    ? calc.blok 
+    : 'Seluruh Kebun (Umum)';
+
+  openModal('modal-biaya');
+
+  const katSelect = document.getElementById('biaya-kategori');
+  if (katSelect) katSelect.value = 'Pupuk & Nutrisi';
+
+  const blokSelect = document.getElementById('biaya-blok');
+  if (blokSelect && blokName) blokSelect.value = blokName;
+
+  const jumlahInput = document.getElementById('biaya-jumlah');
+  if (jumlahInput) jumlahInput.value = calc.totalCost;
+
+  const descInput = document.getElementById('biaya-deskripsi');
+  if (descInput) descInput.value = `Pengadaan pupuk agronomi ${calc.totalSacksAll} Sak (${calc.totalKgAll.toLocaleString('id-ID')} kg) untuk ${blokName}`;
+
+  showToast('Estimasi belanja pupuk telah dimuat ke form biaya operasional!', 'info');
+}
+window.catatEstimasiPupukKeBiaya = catatEstimasiPupukKeBiaya;
 
 /* ==========================================================================
    AUTHENTICATION & SECURITY SYSTEM

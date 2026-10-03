@@ -79,6 +79,18 @@ CREATE TABLE IF NOT EXISTS laporan_tahunan (
   harga REAL DEFAULT 2450
 );
 
+-- 7. Tabel Biaya Operasional (Keuangan Kebun)
+CREATE TABLE IF NOT EXISTS biaya (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tanggal DATE NOT NULL,
+  kategori TEXT NOT NULL,
+  blok TEXT DEFAULT 'Seluruh Kebun (Umum)',
+  deskripsi TEXT NOT NULL,
+  jumlah REAL DEFAULT 0,
+  petugas TEXT DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ============================================================================
 -- INITIAL SEED DATA (DEFAULT MINIMUM HANYA ESTATE MANAGER)
 -- ============================================================================

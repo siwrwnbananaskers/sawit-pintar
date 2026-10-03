@@ -264,7 +264,73 @@ export default {
       }
 
       // ======================================================================
-      // 7. LAPORAN BULANAN
+      // 7. BIAYA OPERASIONAL KEBUN (EXPENSES & NET PROFIT)
+      // ======================================================================
+      if (path === '/api/biaya') {
+        if (method === 'GET') {
+          try {
+            await db.prepare(`
+              CREATE TABLE IF NOT EXISTS biaya (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tanggal TEXT,
+                kategori TEXT,
+                blok TEXT DEFAULT 'Umum',
+                deskripsi TEXT,
+                jumlah REAL DEFAULT 0,
+                petugas TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+              )
+            `).run();
+          } catch(e) {}
+
+          const { results } = await db.prepare('SELECT * FROM biaya ORDER BY tanggal DESC, id DESC').all();
+          return jsonResponse({ success: true, data: results || [] }, 200, corsHeaders);
+        }
+
+        if (method === 'POST') {
+          const body = await request.json();
+          const { tanggal, kategori, blok, deskripsi, jumlah, petugas } = body;
+
+          try {
+            await db.prepare(`
+              CREATE TABLE IF NOT EXISTS biaya (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tanggal TEXT,
+                kategori TEXT,
+                blok TEXT DEFAULT 'Umum',
+                deskripsi TEXT,
+                jumlah REAL DEFAULT 0,
+                petugas TEXT DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+              )
+            `).run();
+          } catch(e) {}
+
+          const res = await db.prepare(
+            'INSERT INTO biaya (tanggal, kategori, blok, deskripsi, jumlah, petugas) VALUES (?, ?, ?, ?, ?, ?)'
+          ).bind(tanggal, kategori, blok || 'Umum', deskripsi || '', parseFloat(jumlah) || 0, petugas || '').run();
+
+          return jsonResponse({ success: true, id: res.meta.last_row_id, message: 'Biaya operasional berhasil dicatat' }, 201, corsHeaders);
+        }
+
+        if (method === 'DELETE') {
+          await db.prepare('DELETE FROM biaya').run();
+          return jsonResponse({ success: true, message: 'Seluruh data biaya operasional berhasil dikosongkan' }, 200, corsHeaders);
+        }
+      }
+
+      if (path.startsWith('/api/biaya/') && method === 'DELETE') {
+        const id = path.split('/')[3];
+        if (id === 'all') {
+          await db.prepare('DELETE FROM biaya').run();
+          return jsonResponse({ success: true, message: 'Seluruh data biaya operasional berhasil dikosongkan' }, 200, corsHeaders);
+        }
+        await db.prepare('DELETE FROM biaya WHERE id = ?').bind(id).run();
+        return jsonResponse({ success: true, message: 'Data biaya operasional berhasil dihapus' }, 200, corsHeaders);
+      }
+
+      // ======================================================================
+      // 8. LAPORAN BULANAN
       // ======================================================================
       if (path === '/api/laporan' && method === 'GET') {
         const tahun = url.searchParams.get('tahun') || '2023';

@@ -204,13 +204,34 @@ const ApiService = (() => {
     return await request('/api/cuaca', { method: 'DELETE' });
   }
 
-  // 6. Laporan Tahunan
+  // 6. Biaya Operasional (Expenses & Net Profit)
+  async function getBiaya() {
+    const res = await request('/api/biaya');
+    return res?.success ? res.data : null;
+  }
+
+  async function createBiaya(data) {
+    return await request('/api/biaya', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async function deleteBiaya(id) {
+    return await request(`/api/biaya/${id}`, { method: 'DELETE' });
+  }
+
+  async function clearAllBiaya() {
+    return await request('/api/biaya', { method: 'DELETE' });
+  }
+
+  // 7. Laporan Tahunan
   async function getLaporan(tahun = '2023') {
     const res = await request(`/api/laporan?tahun=${tahun}`);
     return res?.success ? res.data : null;
   }
 
-  // 7. Pengaturan Sistem
+  // 8. Pengaturan Sistem
   async function getPengaturan() {
     const res = await request('/api/pengaturan');
     return res?.success ? res.data : null;
@@ -234,6 +255,7 @@ const ApiService = (() => {
     kegiatan: { get: getKegiatan, create: createKegiatan, delete: deleteKegiatan },
     panen: { get: getPanen, create: createPanen, delete: deletePanen, clearAll: clearAllPanen },
     cuaca: { get: getCuaca, create: createCuaca, delete: deleteCuaca, clearAll: clearAllCuaca },
+    biaya: { get: getBiaya, create: createBiaya, delete: deleteBiaya, clearAll: clearAllBiaya },
     laporan: { get: getLaporan },
     pengaturan: { get: getPengaturan, save: savePengaturan }
   };
