@@ -292,30 +292,10 @@ async function loadSavedData() {
           }
         }
 
-        // 5. Cuaca Sync
+        // 5. Cuaca Sync (D1 is the master database)
         if (dbCuaca && Array.isArray(dbCuaca)) {
           const cleanCuaca = dbCuaca.filter(c => !isMockRecord(c));
-          if (cleanCuaca.length > 0) {
-            state.cuacaList = cleanCuaca;
-          } else if (state.cuacaList && state.cuacaList.length > 0) {
-            // Upload local cuaca list to Cloudflare D1 database if D1 is empty!
-            for (const item of state.cuacaList) {
-              await ApiService.cuaca.create({
-                tanggal: item.tanggal,
-                jam: item.jam,
-                suhu: item.suhu,
-                kelembaban: item.kelembaban,
-                curah: item.curah,
-                kondisi: item.kondisi,
-                lokasi: item.lokasi || (state.weatherLocation ? state.weatherLocation.name : 'Tegalsari, Musi Rawas')
-              });
-            }
-            const freshCuaca = await ApiService.cuaca.get();
-            if (freshCuaca && freshCuaca.length > 0) {
-              state.cuacaList = freshCuaca;
-            }
-            console.log('Successfully synced local weather records to Cloudflare D1');
-          }
+          state.cuacaList = cleanCuaca;
         }
 
         // 6. Pengaturan Sync
