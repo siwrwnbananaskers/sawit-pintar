@@ -942,12 +942,54 @@ function renderPanenTable(filteredList = state.panenList) {
   if (window.lucide) lucide.createIcons();
 }
 
+const MONTH_NAMES = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
 // 5. Monitoring Cuaca Table & Rekap
 function renderCuacaTable() {
   const tbody = document.getElementById('cuaca-table-body');
   if (!tbody) return;
 
-  const filterBulan = document.getElementById('filter-cuaca-bulan')?.value || 'all';
+  // Populate dynamic month options if dropdown exists
+  const monthSelect = document.getElementById('filter-cuaca-bulan');
+  let filterBulan = 'all';
+
+  if (monthSelect) {
+    const currentVal = monthSelect.value || 'all';
+    const now = new Date();
+    const curYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const monthsSet = new Set([curYearMonth]);
+
+    (state.cuacaList || []).forEach(item => {
+      if (item.tanggal && item.tanggal.length >= 7) {
+        monthsSet.add(item.tanggal.substring(0, 7));
+      }
+    });
+
+    const sortedMonths = Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
+    const monthOptions = [`<option value="all">Semua Bulan</option>`];
+
+    sortedMonths.forEach(ym => {
+      const parts = ym.split('-');
+      const y = parts[0];
+      const m = parts[1];
+      const monthIdx = parseInt(m, 10) - 1;
+      const monthLabel = `${MONTH_NAMES[monthIdx] || m} ${y}`;
+      monthOptions.push(`<option value="${ym}">${monthLabel}</option>`);
+    });
+
+    monthSelect.innerHTML = monthOptions.join('');
+
+    if (currentVal && (currentVal === 'all' || sortedMonths.includes(currentVal))) {
+      monthSelect.value = currentVal;
+    } else {
+      monthSelect.value = 'all';
+    }
+    filterBulan = monthSelect.value;
+  }
+
   const filterLokasi = document.getElementById('filter-cuaca-lokasi')?.value || 'all';
 
   // Populate dynamic location options if dropdown exists
@@ -1092,11 +1134,6 @@ function renderCuacaTable() {
 
   if (window.lucide) lucide.createIcons();
 }
-
-const MONTH_NAMES = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-];
 
 function getLaporanBlocks() {
   const set = new Set();
@@ -2681,21 +2718,32 @@ async function syncWeatherData() {
     }
   }
 
-  // Preserve existing historical records across syncs (Filter out future dates > todayStr)
-  // Unique record key: tanggal + "_" + lokasi + "_" + jam
-  const existingKeys = new Set(state.cuacaList.map(item => `${item.tanggal}_${item.lokasi || 'Tegalsari, Musi Rawas'}_${item.jam}`));
-
-  const newItemsToPush = [];
+  // Merge items into state.cuacaList (Update if same date & station, insert if new)
+  const itemsToSync = [];
   for (const item of fetchedList) {
-    const key = `${item.tanggal}_${item.lokasi}_${item.jam}`;
-    if (!existingKeys.has(key)) {
-      newItemsToPush.push(item);
-      existingKeys.add(key);
+    const existingIndex = state.cuacaList.findIndex(
+      x => x.tanggal === item.tanggal && (x.lokasi || 'Tegalsari, Musi Rawas') === (item.lokasi || 'Tegalsari, Musi Rawas')
+    );
+
+    if (existingIndex !== -1) {
+      state.cuacaList[existingIndex] = {
+        ...state.cuacaList[existingIndex],
+        suhu: item.suhu,
+        kelembaban: item.kelembaban,
+        curah: item.curah,
+        angin: item.angin,
+        kondisi: item.kondisi,
+        jam: item.jam
+      };
+      itemsToSync.push(state.cuacaList[existingIndex]);
+    } else {
+      state.cuacaList.push(item);
+      itemsToSync.push(item);
     }
   }
 
   // Merge & sort newest first
-  state.cuacaList = [...newItemsToPush, ...state.cuacaList]
+  state.cuacaList = state.cuacaList
     .filter(item => item.tanggal <= todayStr)
     .sort((a, b) => {
       if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
@@ -2706,7 +2754,6 @@ async function syncWeatherData() {
   // Sync to Cloudflare D1 Backend if API configured
   const api = window.ApiService || (typeof ApiService !== 'undefined' ? ApiService : null);
   if (api && api.getBaseUrl()) {
-    const itemsToSync = newItemsToPush.length > 0 ? newItemsToPush : state.cuacaList;
     for (const item of itemsToSync) {
       try {
         await api.cuaca.create({
@@ -2721,6 +2768,16 @@ async function syncWeatherData() {
       } catch (e) {
         console.warn('Error syncing cuaca item to Cloudflare D1', e);
       }
+    }
+  }
+
+  // Ensure filter-cuaca-bulan shows the newly synced data
+  const monthSelect = document.getElementById('filter-cuaca-bulan');
+  if (monthSelect && monthSelect.value !== 'all') {
+    const latestDate = state.cuacaList[0]?.tanggal || todayStr;
+    const latestMonth = latestDate.substring(0, 7);
+    if (monthSelect.value !== latestMonth) {
+      monthSelect.value = 'all';
     }
   }
 
